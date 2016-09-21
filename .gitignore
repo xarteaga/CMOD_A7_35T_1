@@ -9,6 +9,7 @@ fpga/docs
 # Hardware system project
 fpga/hw_system/hw_system
 fpga/hw_system/output
+fpga/hw_system/.Xil
 
 # Auto generated workspace
 fpga/sw_system/sdk_workspace
