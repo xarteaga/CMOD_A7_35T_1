@@ -1,0 +1,56 @@
+# Local Documentation
+fpga/docs
+
+# infos, Logs and reports
+*.log
+*.jou
+*.str
+
+# Hardware system project
+fpga/hw_system/hw_system
+fpga/hw_system/output
+
+# Auto generated workspace
+fpga/sw_system/sdk_workspace
+
+# Software build
+fpga/sw_system/build
+
+# Software IDE
+fpga/sw_system/.idea
+.idea
+CMakeLists.txt
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
