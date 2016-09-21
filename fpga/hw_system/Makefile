@@ -34,6 +34,7 @@ $(LOG_PATH):
 
 # 1 ) Create HW system
 $(HW_PROJECT): $(CREATE_HW_SYSTEM) src/hw_system_bd.tcl src/system.xdc
+	@mkdir -p $(LOG_PATH)
 	@rm -f *.jou *.log *.str
 	@rm -f -r hw_system
 	@$(VIVADO) -source $(CREATE_HW_SYSTEM) -log $(LOG_PATH)/$(basename $(CREATE_HW_SYSTEM)).log

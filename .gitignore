@@ -20,7 +20,7 @@ fpga/sw_system/build
 # Software IDE
 fpga/sw_system/.idea
 .idea
-CMakeLists.txt
+./CMakeLists.txt
 
 # Object files
 *.o
