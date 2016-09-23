@@ -52,8 +52,9 @@ add_files -quiet $src_dir/hdl
 # Add IPs
 add_files -quiet [glob -nocomplain ../src/ip/*.xci]
 
-# Add constraints
-add_files -fileset constrs_1 -quiet $src_dir/constraints
+# Add the system.xdc constraints file to the design
+add_files -fileset constrs_1 -norecurse ./src/system.xdc
+import_files -fileset constrs_1 ./src/system.xdc
 
 # Mark timing_exc.xdc for LATE processing
 # set_property "processing_order" "LATE" [get_files timing_exc.xdc]
