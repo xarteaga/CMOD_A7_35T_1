@@ -354,10 +354,16 @@ CONFIG.RESET_BOARD_INTERFACE {reset} \
 CONFIG.USE_BOARD_FLOW {true} \
  ] $rst_clk_wiz_0_100M
 
+# Create instance: fit_timer_0, and set properties
+set fit_timer_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fit_timer:2.0 fit_timer_0 ]
+  set_property -dict [ list \
+CONFIG.C_NO_CLOCKS {100000} \
+] $fit_timer_0
+
   # Create instance: xlconcat_0, and set properties
   set xlconcat_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0 ]
   set_property -dict [ list \
-    CONFIG.NUM_PORTS {3} \
+    CONFIG.NUM_PORTS {4} \
  ] $xlconcat_0
 
   # Create interface connections
@@ -386,6 +392,7 @@ CONFIG.USE_BOARD_FLOW {true} \
   connect_bd_net -net axi_uart_wifi_interrupt [get_bd_pins axi_uart_wifi/interrupt] [get_bd_pins xlconcat_0/In2]
   connect_bd_net -net axi_gpio_0_ip2intc_irpt [get_bd_pins axi_gpio_0/ip2intc_irpt] [get_bd_pins xlconcat_0/In1]
   connect_bd_net -net axi_timer_0_interrupt [get_bd_pins axi_timer_0/interrupt] [get_bd_pins xlconcat_0/In0]
+  connect_bd_net -net fit_timer_0_interrupt [get_bd_pins fit_timer_0/interrupt] [get_bd_pins xlconcat_0/In3]
   connect_bd_net -net clk_wiz_0_locked [get_bd_pins clk_wiz_0/locked] [get_bd_pins rst_clk_wiz_0_100M/dcm_locked]
   connect_bd_net -net mdm_1_debug_sys_rst [get_bd_pins mdm_1/Debug_SYS_Rst] [get_bd_pins rst_clk_wiz_0_100M/mb_debug_sys_rst]
   connect_bd_net -net microblaze_0_Clk \
@@ -412,14 +419,18 @@ CONFIG.USE_BOARD_FLOW {true} \
     [get_bd_pins microblaze_0_axi_periph/M05_ACLK] \
     [get_bd_pins microblaze_0_axi_periph/S00_ACLK] \
     [get_bd_pins microblaze_0_local_memory/LMB_Clk] \
-    [get_bd_pins rst_clk_wiz_0_100M/slowest_sync_clk]
+    [get_bd_pins rst_clk_wiz_0_100M/slowest_sync_clk] \
+    [get_bd_pins fit_timer_0/Clk]
   connect_bd_net -net reset_1 [get_bd_ports reset] [get_bd_pins clk_wiz_0/reset] [get_bd_pins rst_clk_wiz_0_100M/ext_reset_in]
   connect_bd_net -net rst_clk_wiz_0_100M_bus_struct_reset [get_bd_pins microblaze_0_local_memory/SYS_Rst] [get_bd_pins rst_clk_wiz_0_100M/bus_struct_reset]
   connect_bd_net -net rst_clk_wiz_0_100M_interconnect_aresetn \
     [get_bd_pins axi_mem_intercon/ARESETN] \
     [get_bd_pins microblaze_0_axi_periph/ARESETN] \
     [get_bd_pins rst_clk_wiz_0_100M/interconnect_aresetn]
-  connect_bd_net -net rst_clk_wiz_0_100M_mb_reset [get_bd_pins microblaze_0/Reset] [get_bd_pins rst_clk_wiz_0_100M/mb_reset]
+  connect_bd_net -net rst_clk_wiz_0_100M_mb_reset \
+    [get_bd_pins microblaze_0/Reset] \
+    [get_bd_pins rst_clk_wiz_0_100M/mb_reset] \
+    [get_bd_pins fit_timer_0/Rst]
   connect_bd_net -net rst_clk_wiz_0_100M_peripheral_aresetn \
     [get_bd_pins axi_emc_0/s_axi_aresetn] \
     [get_bd_pins axi_gpio_0/s_axi_aresetn] \

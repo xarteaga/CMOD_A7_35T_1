@@ -6,8 +6,8 @@ BEGIN OS
  PARAMETER OS_NAME = standalone
  PARAMETER OS_VER = 5.1
  PARAMETER PROC_INSTANCE = microblaze_0
- PARAMETER stdin = axi_uartlite_0
- PARAMETER stdout = axi_uartlite_0
+ PARAMETER stdin = axi_uart_usb
+ PARAMETER stdout = axi_uart_usb
 END
 
 
@@ -51,7 +51,13 @@ END
 BEGIN DRIVER
  PARAMETER DRIVER_NAME = uartlite
  PARAMETER DRIVER_VER = 3.0
- PARAMETER HW_INSTANCE = axi_uartlite_0
+ PARAMETER HW_INSTANCE = axi_uart_usb
+END
+
+BEGIN DRIVER
+ PARAMETER DRIVER_NAME = uartlite
+ PARAMETER DRIVER_VER = 3.0
+ PARAMETER HW_INSTANCE = axi_uart_wifi
 END
 
 BEGIN DRIVER
