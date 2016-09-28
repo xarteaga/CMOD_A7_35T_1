@@ -50,6 +50,8 @@ set(CMAKE_CXX_COMPILER_WORKS 1)
 
 # Add subdirectories
 add_subdirectory(src/platform)
+add_subdirectory(src/wifi_esp8266)
+add_subdirectory(src/scheduler)
 
 project (sw_system C )
 
@@ -60,17 +62,21 @@ file(GLOB BSP_HEADERS "${CMAKE_SOURCE_DIR}/sdk_workspace/bsp_0/microblaze_0/incl
 add_executable(sw_system
 		src/main.c
 		${BSP_HEADERS}
-		src/main.c)
+	)
 
 # Directories
 include_directories(sw_system
 		sdk_workspace/bsp_0/microblaze_0/include
 		src/platform
+		src/wifi_esp8266
+		src/scheduler
 		src
 	)
 
 # Add libraries
 target_link_libraries(sw_system sw_platform)
+target_link_libraries(sw_system wifi_esp8266)
+target_link_libraries(sw_system scheduler)
 link_directories(sw_system sdk_workspace/bsp_0/microblaze_0/lib)
 
 # Setup linker target
