@@ -39,7 +39,7 @@ void platform_enable_interrupts(void) {
     XIntc_Enable(intcp, XPAR_INTC_0_UARTLITE_1_VEC_ID);
     XIntc_Enable(intcp, XPAR_AXI_INTC_0_FIT_TIMER_0_INTERRUPT_INTR);
 
-    xil_printf("%s ... OK\r\n", __func__);
+    xil_printf("%32s ... OK\r\n", __func__);
 }
 
 void init_platform(void)

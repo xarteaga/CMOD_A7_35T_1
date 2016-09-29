@@ -9,7 +9,11 @@ add_library(wifi_esp8266
 		wifi_esp8266.c
 		wifi_esp8266.h
 		wifi_uart.c
-		wifi_uart.h wifi_esp8266_config.h.h wifi_openat.c wifi_openat.h)
+		wifi_uart.h
+		wifi_openat.c
+		wifi_openat.h
+		wifi_utils.c
+		wifi_utils.h)
 
 # Include Directories
 include_directories(wifi_esp8266 ../../sdk_workspace/bsp_0/microblaze_0/include)

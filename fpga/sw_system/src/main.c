@@ -14,7 +14,7 @@
 XGpio Gpio1;
 
 int main() {
-    xil_printf("--- CMOD_A7_35T_1 Running ---\r\n");
+    xil_printf("\r\n--- CMOD_A7_35T_1 Running %s %s ---\r\n\r\n", __DATE__, __TIME__);
 
     /* Init platform */
     init_platform();
@@ -32,7 +32,7 @@ int main() {
         if (XGpio_DiscreteRead(&Gpio1, 2) != 0){
             xil_printf("> AT\r\n");
             while(XGpio_DiscreteRead(&Gpio1, 2) != 0);
-            //wifi_esp8266_send_AT();
+            wifi_esp8266_send_CWLAP();
 
         }
 

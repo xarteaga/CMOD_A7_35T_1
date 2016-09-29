@@ -18,7 +18,7 @@ XUartLite wifi_uart;
 
 /* Routines */
 void wifi_uart_rx_handler(void *CallBackRef, unsigned int EventData) {
-	/* Reset Bufefr */
+	/* Reset Buffer */
     XUartLite_Recv(&wifi_uart, wifi_uart_rx_buff, WIFI_UART_BUFF_SIZE);
 
     return;
@@ -38,8 +38,7 @@ void wifi_uart_init (void) {
 	XUartLite_Recv(&wifi_uart, wifi_uart_rx_buff, WIFI_UART_BUFF_SIZE);
 
 	wifi_uart_buff_read_ptr = 0;
-    xil_printf(" --- %s ---\r\n", __func__);
-	xil_printf("Buffer size: %d\r\n", WIFI_UART_BUFF_SIZE);
+    xil_printf("%32s ... OK\r\n", __func__);
 }
 
 u32 wifi_uart_available() {
@@ -100,7 +99,7 @@ u32 wifi_uart_read_ERROR(char *buf, u32 maxsize) {
     return n;
 }
 
-u32 wifi_uart_read_OK(char *buf, u32 maxsize) {
+size_t wifi_uart_read_OK(uint8_t *buf, size_t maxsize) {
 	u32 n = wifi_uart_available();
 	u32 count = 0, ptr = wifi_uart_buff_read_ptr;
 
@@ -118,7 +117,7 @@ u32 wifi_uart_read_OK(char *buf, u32 maxsize) {
 	if (count == n) {
 		n = 0;
 	} else {
-		n = wifi_uart_read((u8*)buf, count + 4);
+		n = wifi_uart_read(buf, count + 4);
 	}
 
 	return n;

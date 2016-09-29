@@ -63,7 +63,7 @@ void scheduler_init(void){
     scheduler_busy = FALSE;
 
 
-    xil_printf("%s ... OK\r\n", __func__);
+    xil_printf("%32s ... OK\r\n", __func__);
 }
 
 void scheduler_add_entry(scheduler_entry_t *entry) {
@@ -77,6 +77,6 @@ void scheduler_add_entry(scheduler_entry_t *entry) {
 
         //xil_printf("%s: number of entries: %d.\r\n", __FUNCTION__, scheduler_entries_count);
     } else {
-        xil_printf("%s: List has reached its limit.\r\n", __FUNCTION__);
+        xil_printf("[%s] List has reached its limit.\r\n", __FUNCTION__);
     }
 }

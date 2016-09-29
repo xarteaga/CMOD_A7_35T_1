@@ -8,6 +8,7 @@
 #include "wifi_esp8266.h"
 #include "wifi_openat.h"
 #include "scheduler.h"
+#include "wifi_utils.h"
 
 #define WIFI_UART_MAX_BUF 1024
 
@@ -17,13 +18,15 @@ scheduler_callback wifi_esp8266_task_poll(u32 elapsed);
 /* Variables */
 static u8 wifi_esp8266_buffer [WIFI_UART_MAX_BUF];
 static scheduler_entry_t wifi_esp8266_task_poll_entry = {0, 10000, wifi_esp8266_task_poll};
-
+static t_wifi_ap_list wifi_ap_list;
 
 void wifi_esp8266_send_CWLAP(void) {
     u8 cmd [] = "AT+CWLAP\r\n";
     t_wifi_openat_return openat_return = wifi_openat_send_cmd(cmd);
     if (openat_return == WIFI_OPENAT_RETURN_NOK) {
-        xil_printf("[%s] wifi_openat_send_cmd returned %d\r\n", __FUNCTION__, openat_return);
+        xil_printf("[%s] OpenAT controller is Busy \r\n", __FUNCTION__);
+    } else {
+        //xil_printf("[%s] wifi_openat_send_cmd OK\r\n", __FUNCTION__);
     }
 }
 
@@ -48,24 +51,27 @@ void wifi_esp8266_init ( void ) {
     scheduler_add_entry(&wifi_esp8266_task_poll_entry);
 
     /* Reset WiFi Module */
-    wifi_esp8266_send_Reset();
+    wifi_esp8266_send_CWLAP();
 
-    xil_printf("%s ... OK\r\n", __func__);
+    xil_printf("%32s ... OK\r\n", __func__);
 }
 
 void wifi_esp8266_task ( void ) {
     u32 size = 0;
-
+    t_wifi_openat_state wifi_state;
     /* Wifi Tasks */
     wifi_openat_task();
 
+    wifi_state = wifi_openat_get_state();
 
-    if (wifi_openat_get_state() == WIFI_OPENAT_STATE_DONE_OK){
+
+    if (wifi_state == WIFI_OPENAT_STATE_DONE_OK){
         size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[size] = 0;
 
-        xil_printf("%s", wifi_esp8266_buffer);
-    } else if (wifi_openat_get_state() == WIFI_OPENAT_STATE_DONE_ERROR) {
+        wifi_utils_parse_cwlap(wifi_esp8266_buffer, size, wifi_ap_list);
+
+    } else if (wifi_state == WIFI_OPENAT_STATE_DONE_ERROR) {
         xil_printf("[%s] WIFI_OPENAT_STATE_DONE_ERROR\r\n", __FUNCTION__);
     }
 }
