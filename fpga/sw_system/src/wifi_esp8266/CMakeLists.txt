@@ -18,3 +18,4 @@ add_library(wifi_esp8266
 # Include Directories
 include_directories(wifi_esp8266 ../../sdk_workspace/bsp_0/microblaze_0/include)
 include_directories(wifi_esp8266 ../scheduler)
+include_directories(wifi_esp8266 ../config)

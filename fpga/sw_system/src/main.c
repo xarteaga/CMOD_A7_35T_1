@@ -32,7 +32,7 @@ int main() {
         if (XGpio_DiscreteRead(&Gpio1, 2) != 0){
             xil_printf("> AT\r\n");
             while(XGpio_DiscreteRead(&Gpio1, 2) != 0);
-            wifi_esp8266_send_CWLAP();
+            //wifi_esp8266_send_CWLAP();
 
         }
 

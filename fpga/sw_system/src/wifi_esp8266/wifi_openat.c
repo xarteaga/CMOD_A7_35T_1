@@ -9,7 +9,7 @@
 
 /* Definitions */
 #define WIFI_OPENAT_UART_BUFFER_SIZE 512
-#define WIFI_OPENAT_CMD_TIMEOUT      10000
+#define WIFI_OPENAT_CMD_TIMEOUT      20000
 
 /* Function prototypes */
 scheduler_callback wifi_openat_task_timer(u32 elapsed);
@@ -91,11 +91,13 @@ void wifi_openat_state_idle() {
 }
 
 void wifi_openat_state_busy() {
-    u32 n_ok, n_err;
+    u32 n_ok, n_err = 0;
 
     /* Read response */
     n_ok = wifi_uart_read_OK(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1);
-    n_err = wifi_uart_read_ERROR(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1);
+    if (n_ok == 0) {
+    	n_err = wifi_uart_read_ERROR(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1);
+    }
 
     /* Take decision */
     if (n_ok > 0) {
