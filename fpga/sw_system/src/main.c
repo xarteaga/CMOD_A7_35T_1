@@ -10,6 +10,7 @@
 #include "platform.h"
 #include "wifi_esp8266.h"
 #include "scheduler.h"
+#include "http_client.h"
 
 XGpio Gpio1;
 
@@ -20,6 +21,7 @@ int main() {
     init_platform();
     scheduler_init();
     wifi_esp8266_init();
+    http_client_init ();
 
     /* Enable Interrupts */
     platform_enable_interrupts();

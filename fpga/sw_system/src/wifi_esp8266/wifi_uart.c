@@ -99,17 +99,17 @@ u32 wifi_uart_read_ERROR(char *buf, u32 maxsize) {
     return n;
 }
 
-size_t wifi_uart_read_OK(uint8_t *buf, size_t maxsize) {
+size_t wifi_uart_read_key(uint8_t *buf, size_t maxsize, const uint8_t *key) {
+	size_t keylen = strlen(key);
 	u32 n = wifi_uart_available();
 	u32 count = 0, ptr = wifi_uart_buff_read_ptr;
 
 	if (maxsize < n)
 		n = maxsize;
 
-	for (count = 0; ((count < n) && !(
-			(wifi_uart_rx_buff[WIFI_UART_BUFF_MOD(ptr + 0)] == 'O') &&
-			(wifi_uart_rx_buff[WIFI_UART_BUFF_MOD(ptr + 1)] == 'K') &&
-			(wifi_uart_rx_buff[WIFI_UART_BUFF_MOD(ptr + 2)] == '\r'))); count ++){
+	for (count = 0;
+		((count < n) && (strncmp((char*) ptr, (char*) key, keylen) == 0));
+		count ++){
 			ptr = WIFI_UART_BUFF_MOD(ptr + 1);
 	}
 	//xil_printf("%d, %d, %s\r\n", n, count, &wifi_uart_rx_buff[wifi_uart_buff_read_ptr]);

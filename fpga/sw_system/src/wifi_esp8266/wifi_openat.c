@@ -36,7 +36,12 @@ t_wifi_openat_state wifi_openat_get_state(void) {
     return wifi_openat_state;
 }
 
-t_wifi_openat_return wifi_openat_send_cmd(u8 *cmd) {
+void wifi_openat_write(uint8_t *buf, size_t nbytes) {
+	/* Send command */
+	wifi_uart_write(buf, nbytes);
+}
+
+t_wifi_openat_return wifi_openat_send_cmd(uint8_t *cmd) {
     t_wifi_openat_return ret;
 
     /* Check FSM state */
@@ -94,7 +99,7 @@ void wifi_openat_state_busy() {
     u32 n_ok, n_err = 0;
 
     /* Read response */
-    n_ok = wifi_uart_read_OK(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1);
+    n_ok = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1, (const uint8_t*)"OK");
     if (n_ok == 0) {
     	n_err = wifi_uart_read_ERROR(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1);
     }

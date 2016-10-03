@@ -52,6 +52,7 @@ set(CMAKE_CXX_COMPILER_WORKS 1)
 add_subdirectory(src/platform)
 add_subdirectory(src/wifi_esp8266)
 add_subdirectory(src/scheduler)
+add_subdirectory(src/http_client)
 
 project (sw_system C )
 
@@ -70,6 +71,7 @@ include_directories(sw_system
 		src/platform
 		src/wifi_esp8266
 		src/scheduler
+		src/http_client
 		src
 	)
 
@@ -77,6 +79,8 @@ include_directories(sw_system
 target_link_libraries(sw_system sw_platform)
 target_link_libraries(sw_system wifi_esp8266)
 target_link_libraries(sw_system scheduler)
+target_link_libraries(sw_system http_client)
+
 link_directories(sw_system sdk_workspace/bsp_0/microblaze_0/lib)
 
 # Setup linker target

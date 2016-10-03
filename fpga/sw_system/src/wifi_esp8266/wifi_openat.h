@@ -30,6 +30,7 @@ typedef void f_wifi_openat_sendat_cb (void);
 
 /* FSM Interfaces */
 t_wifi_openat_state wifi_openat_get_state(void);
+void wifi_openat_write(uint8_t *buf, size_t nbytes);
 t_wifi_openat_return wifi_openat_send_cmd (u8 *cmd);
 size_t wifi_openat_read (u8 *buf, size_t maxlen);
 

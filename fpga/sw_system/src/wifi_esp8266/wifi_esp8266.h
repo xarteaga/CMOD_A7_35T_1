@@ -40,7 +40,11 @@ typedef struct {
 	t_wifi_ap entries [WIFI_AP_MAXNUM];
 } t_wifi_ap_list;
 
+t_wifi_esp8266_state wifi_esp8266_get_state(void);
 void wifi_esp8266_init ( void );
 void wifi_esp8266_task ( void );
+
+void wifi_esp8266_connect(uint8_t *addr, uint16_t port);
+void wifi_esp8266_send(uint8_t *msg, size_t size);
 
 #endif /* _WIFI_ESP8266_H */

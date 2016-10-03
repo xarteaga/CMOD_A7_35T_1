@@ -46,14 +46,15 @@ void wifi_esp8266_connect(uint8_t *addr, uint16_t port) {
 
 void wifi_esp8266_send(uint8_t *msg, size_t size) {
 	uint8_t cmd[WIFI_CMD_MAX_LEN] = {0};
-	size_t n;
 
 	if (wifi_esp8266_state == WIFI_ESP8266_STATE_CONNECTED) {
 		/* Build command */
-		n = snprintf((char*) cmd, WIFI_CMD_MAX_LEN, "AT+CIPSEND=4,%d\r\n", (int) size);
+		(void) snprintf((char*) cmd, WIFI_CMD_MAX_LEN, "AT+CIPSEND=4,%d\r\n", (int) size);
 
 		/* Send command */
 		(void) wifi_openat_send_cmd(cmd);
+
+		wifi_openat_write(msg, size);
 
 		/* Print trace */
 		xil_printf("[%s] Sending to %d bytes ...\r\n", (int) size);
@@ -369,6 +370,10 @@ void wifi_esp8266_ready (void){
 		/* Keep same state */
 		wifi_esp8266_state = WIFI_ESP8266_STATE_READY;
 	}
+}
+
+t_wifi_esp8266_state wifi_esp8266_get_state(void){
+	return wifi_esp8266_state;
 }
 
 /* Initiation routine */
