@@ -99,7 +99,7 @@ void wifi_openat_state_busy() {
     u32 n_ok, n_err = 0;
 
     /* Read response */
-    n_ok = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1, (const uint8_t*)"OK");
+    n_ok = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1, (uint8_t*)"\r\nOK\r\n");
     if (n_ok == 0) {
     	n_err = wifi_uart_read_ERROR(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1);
     }

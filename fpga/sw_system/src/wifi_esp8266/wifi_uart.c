@@ -99,25 +99,36 @@ u32 wifi_uart_read_ERROR(char *buf, u32 maxsize) {
     return n;
 }
 
-size_t wifi_uart_read_key(uint8_t *buf, size_t maxsize, const uint8_t *key) {
-	size_t keylen = strlen(key);
+size_t wifi_uart_read_key(uint8_t *buf, size_t maxsize, uint8_t *key) {
+	size_t keylen = strlen((char*)key);
 	u32 n = wifi_uart_available();
 	u32 count = 0, ptr = wifi_uart_buff_read_ptr;
+	uint8_t match = FALSE;
+	u32 k;
 
 	if (maxsize < n)
 		n = maxsize;
 
-	for (count = 0;
-		((count < n) && (strncmp((char*) ptr, (char*) key, keylen) == 0));
-		count ++){
-			ptr = WIFI_UART_BUFF_MOD(ptr + 1);
-	}
-	//xil_printf("%d, %d, %s\r\n", n, count, &wifi_uart_rx_buff[wifi_uart_buff_read_ptr]);
+	for (count = 0; ((count < n) && (match != TRUE)); count ++){
+		/* Recover pointer */
+		ptr = WIFI_UART_BUFF_MOD(wifi_uart_buff_read_ptr + count);
 
-	if (count == n) {
-		n = 0;
+		/* Check key match */
+		for (k = 0; (k < keylen) && (wifi_uart_rx_buff[ptr] == key[k]); k++) {
+			ptr = WIFI_UART_BUFF_MOD(ptr + 1);
+		}
+
+		/* If for loop reaches its end ... */
+		if ( k == keylen ) {
+			/* It is a match */
+			match = TRUE;
+		}
+	}
+
+	if (match == TRUE) {
+		n = wifi_uart_read(buf, count + keylen);
 	} else {
-		n = wifi_uart_read(buf, count + 4);
+		n = 0;
 	}
 
 	return n;
