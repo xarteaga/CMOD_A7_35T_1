@@ -54,8 +54,6 @@ void wifi_esp8266_send(uint8_t *msg, size_t size) {
 		/* Send command */
 		(void) wifi_openat_send_data(cmd, msg, size);
 
-		wifi_openat_write(msg, size);
-
 		/* Print trace */
 		xil_printf("[%s] Sending to %d bytes ...\r\n", __FUNCTION__, (int) size);
 

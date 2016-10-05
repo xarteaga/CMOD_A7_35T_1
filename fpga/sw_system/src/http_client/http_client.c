@@ -22,7 +22,7 @@ scheduler_callback http_client_task_poll(u32 elapsed) {
 		xil_printf("[%s] HTTP Client connecting...\r\n", __FUNCTION__);
 
 		/* Send Connect */
-		wifi_esp8266_connect(HTTP_CLIENT_SERVER_ADDR, HTTP_CLIENT_SERVER_PORT);
+		wifi_esp8266_connect((uint8_t*)HTTP_CLIENT_SERVER_ADDR, HTTP_CLIENT_SERVER_PORT);
 
 		/* Go to connecting */
 		http_client_state = HTTP_CLIENT_STATE_CONNECTING;
@@ -62,7 +62,7 @@ static void http_client_idle (void) {
 }
 
 static void http_client_connecting (void) {
-	uint8_t http_request [] = "GET /gen_204 HTTP/1.1\r\nHost: google.com\r\nUser-Agent: VaXiOS\r\nAccept: */*\r\n\r\n";
+	uint8_t http_request [] = "GET /gen_204 HTTP/1.1\r\nHost: www.google.com\r\nUser-Agent: VaXiOS\r\nAccept: */*\r\n\n";
 	t_wifi_esp8266_state wifi_esp8266_state = wifi_esp8266_get_state();
 
 	if (wifi_esp8266_state == WIFI_ESP8266_STATE_CONNECTED) {
@@ -78,7 +78,7 @@ static void http_client_connecting (void) {
         xil_printf("[%s] HTTP Client connection failed... Retrying...\r\n", __FUNCTION__);
 
         /* Send Connect */
-        wifi_esp8266_connect(HTTP_CLIENT_SERVER_ADDR, HTTP_CLIENT_SERVER_PORT);
+        wifi_esp8266_connect((uint8_t*)HTTP_CLIENT_SERVER_ADDR, HTTP_CLIENT_SERVER_PORT);
 
         http_client_state = HTTP_CLIENT_STATE_CONNECTING;
 	} else {

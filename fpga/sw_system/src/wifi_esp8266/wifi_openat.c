@@ -44,11 +44,6 @@ t_wifi_openat_state wifi_openat_get_state(void) {
     return wifi_openat_state;
 }
 
-void wifi_openat_write(uint8_t *buf, size_t nbytes) {
-	/* Send command */
-	wifi_uart_write(buf, nbytes);
-}
-
 t_wifi_openat_return wifi_openat_send_cmd(uint8_t *cmd) {
     t_wifi_openat_return ret;
 
@@ -149,7 +144,7 @@ void wifi_openat_state_busy() {
     u32 n_ok, n_err = 0;
 
     /* Read response */
-    n_ok = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1, (uint8_t*)"\r\nOK\r\n");
+    n_ok = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1, (uint8_t*)"OK\r\n");
     if (n_ok == 0) {
     	n_err = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1, (uint8_t*)"ERROR\r\n");
     }
@@ -191,7 +186,7 @@ static void wifi_openat_state_done_error() {
 }
 
 static void wifi_openat_state_wait_for_data() {
-    size_t n_ok = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE, "\r\nOK\r\n");
+    size_t n_ok = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE, ">");
 
     if (n_ok > 0) {
         /* Print trace */

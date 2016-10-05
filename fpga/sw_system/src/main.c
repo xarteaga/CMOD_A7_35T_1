@@ -30,6 +30,7 @@ int main() {
 
     while (TRUE) {
         wifi_esp8266_task();
+        http_client_task();
 
         if (XGpio_DiscreteRead(&Gpio1, 2) != 0){
             xil_printf("> AT\r\n");
