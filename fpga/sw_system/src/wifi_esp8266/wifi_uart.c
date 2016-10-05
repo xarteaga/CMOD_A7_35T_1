@@ -7,12 +7,15 @@
 #include "xuartlite_l.h"
 #include "xparameters.h"
 
-#define WIFI_UART_BUFF_SIZE_POW (10)
+#define WIFI_UART_BUFF_SIZE_POW (11)
 #define WIFI_UART_BUFF_SIZE (1<<WIFI_UART_BUFF_SIZE_POW)
 #define WIFI_UART_BUFF_MOD(X) (((u32) X ) & (WIFI_UART_BUFF_SIZE - 1))
 
 u8 wifi_uart_rx_buff[WIFI_UART_BUFF_SIZE];
 u32 wifi_uart_buff_read_ptr = 0;
+
+u8 wifi_uart_tx_buff[WIFI_UART_BUFF_SIZE];
+
 
 XUartLite wifi_uart;
 
@@ -54,7 +57,8 @@ u32 wifi_uart_available() {
 }
 
 void wifi_uart_write(u8 *buf, u32 size) {
-	XUartLite_Send(&wifi_uart, buf, size);
+	memcpy(wifi_uart_tx_buff, buf, size);
+	XUartLite_Send(&wifi_uart, wifi_uart_tx_buff, size);
 }
 
 u32 wifi_uart_read(u8 *buf, u32 maxsize) {
@@ -126,7 +130,7 @@ size_t wifi_uart_read_key(uint8_t *buf, size_t maxsize, uint8_t *key) {
 	}
 
 	if (match == TRUE) {
-		n = wifi_uart_read(buf, count + keylen);
+		n = wifi_uart_read(buf, count + keylen - 1);
 	} else {
 		n = 0;
 	}

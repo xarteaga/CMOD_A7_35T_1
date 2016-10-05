@@ -11,4 +11,7 @@ typedef enum {
 	HTTP_CLIENT_STATE_SENDING
 } t_http_client_state;
 
+void http_client_task ( void );
+void http_client_init ( void );
+
 #endif /* _HTTP_CLIENT_H */

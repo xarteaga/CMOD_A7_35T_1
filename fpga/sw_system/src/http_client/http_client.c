@@ -8,6 +8,7 @@
 #include "http_client.h"
 #include "scheduler.h"
 #include "wifi_esp8266.h"
+#include "wifi_cfg.h"
 
 /* Function prototypes */
 scheduler_callback http_client_task_poll(uint32_t elapsed);
@@ -18,8 +19,10 @@ static scheduler_entry_t http_client_task_poll_entry = {0, 10000, http_client_ta
 
 scheduler_callback http_client_task_poll(u32 elapsed) {
 	if (http_client_state == HTTP_CLIENT_STATE_IDLE) {
+		xil_printf("[%s] HTTP Client connecting...\r\n", __FUNCTION__);
+
 		/* Send Connect */
-		wifi_esp8266_connect("google.com", 80);
+		wifi_esp8266_connect(HTTP_CLIENT_SERVER_ADDR, HTTP_CLIENT_SERVER_PORT);
 
 		/* Go to connecting */
 		http_client_state = HTTP_CLIENT_STATE_CONNECTING;
@@ -33,6 +36,8 @@ static void http_client_undefined(void){
 	t_wifi_esp8266_state wifi_esp8266_state = wifi_esp8266_get_state();
 
 	if (wifi_esp8266_state == WIFI_ESP8266_STATE_READY) {
+		xil_printf("[%s] HTTP Client detected WiFi module ready.\r\n", __FUNCTION__);
+
 		/* Go to idle */
 		http_client_state = HTTP_CLIENT_STATE_IDLE;
 	} else {
@@ -57,15 +62,25 @@ static void http_client_idle (void) {
 }
 
 static void http_client_connecting (void) {
-	uint8_t http_request [] = "GET /gen_204 HTTP/1.1\nConnection: close\n\n";
+	uint8_t http_request [] = "GET /gen_204 HTTP/1.1\r\nHost: google.com\r\nUser-Agent: VaXiOS\r\nAccept: */*\r\n\r\n";
 	t_wifi_esp8266_state wifi_esp8266_state = wifi_esp8266_get_state();
 
 	if (wifi_esp8266_state == WIFI_ESP8266_STATE_CONNECTED) {
-		/* Send message */
-		wifi_esp8266_send(http_request, sizeof(http_request));
+        xil_printf("[%s] HTTP Client connected... Sending request... \r\n", __FUNCTION__);
 
-		/* Go to idle */
-		http_client_state = HTTP_CLIENT_STATE_SENDING;
+        /* Send message */
+        wifi_esp8266_send(http_request, sizeof(http_request));
+
+        /* Go to sending */
+        http_client_state = HTTP_CLIENT_STATE_SENDING;
+    }else if (wifi_esp8266_state <= WIFI_ESP8266_STATE_READY) {
+        /* Print trace */
+        xil_printf("[%s] HTTP Client connection failed... Retrying...\r\n", __FUNCTION__);
+
+        /* Send Connect */
+        wifi_esp8266_connect(HTTP_CLIENT_SERVER_ADDR, HTTP_CLIENT_SERVER_PORT);
+
+        http_client_state = HTTP_CLIENT_STATE_CONNECTING;
 	} else {
 		/* keep same state */
 		http_client_state = HTTP_CLIENT_STATE_CONNECTING;
@@ -76,6 +91,8 @@ static void http_client_sending (void) {
 	t_wifi_esp8266_state wifi_esp8266_state = wifi_esp8266_get_state();
 
 	if (wifi_esp8266_state == WIFI_ESP8266_STATE_READY) {
+        xil_printf("[%s] HTTP Request sent... Waiting for reply... \r\n", __FUNCTION__);
+
 		/* Go to idle */
 		http_client_state = HTTP_CLIENT_STATE_RECEIVING;
 	} else {
@@ -88,6 +105,8 @@ static void http_client_receiving (void) {
 	t_wifi_esp8266_state wifi_esp8266_state = wifi_esp8266_get_state();
 
 	if (wifi_esp8266_state == WIFI_ESP8266_STATE_READY) {
+        xil_printf("[%s] HTTP Reply received... Disconnecting... \r\n", __FUNCTION__);
+
 		/* Go to idle */
 		http_client_state = HTTP_CLIENT_STATE_DISCONNECTING;
 	} else {
@@ -100,6 +119,8 @@ static void http_client_disconnecting (void) {
 	t_wifi_esp8266_state wifi_esp8266_state = wifi_esp8266_get_state();
 
 	if (wifi_esp8266_state == WIFI_ESP8266_STATE_READY) {
+        xil_printf("[%s] HTTP Client Disconnected... \r\n", __FUNCTION__);
+
 		/* Go to idle */
 		http_client_state = HTTP_CLIENT_STATE_IDLE;
 	} else {
