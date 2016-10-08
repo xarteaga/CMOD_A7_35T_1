@@ -14,6 +14,7 @@ typedef enum {
     WIFI_OPENAT_STATE_DONE_OK,
     WIFI_OPENAT_STATE_DONE_ERROR,
     WIFI_OPENAT_STATE_WAIT_FOR_DATA,
+    WIFI_OPENAT_STATE_RECEIVING,
     WIFI_OPENAT_STATE_BUSY
 } t_wifi_openat_state;
 
@@ -34,6 +35,8 @@ t_wifi_openat_state wifi_openat_get_state(void);
 t_wifi_openat_return wifi_openat_send_cmd (u8 *cmd);
 t_wifi_openat_return wifi_openat_send_data(uint8_t *cmd, uint8_t *data, size_t len);
 size_t wifi_openat_read (u8 *buf, size_t maxlen);
+size_t wifi_openat_tcp_available(void);
+size_t wifi_openat_tcp_recv(uint8_t *buf);
 
 /* FSM init */
 void wifi_openat_init (void);

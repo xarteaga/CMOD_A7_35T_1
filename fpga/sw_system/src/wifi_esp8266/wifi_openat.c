@@ -1,6 +1,8 @@
 /* C Standard includes */
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
 /* Project includes */
 #include "wifi_openat.h"
@@ -8,25 +10,24 @@
 #include "scheduler.h"
 
 /* Definitions */
-#define WIFI_OPENAT_UART_BUFFER_SIZE 512
+#define WIFI_OPENAT_SEND_BUFFER_SIZE 4096
 #define WIFI_OPENAT_RECV_BUFFER_SIZE 4096
-#define WIFI_OPENAT_CMD_TIMEOUT      30000
+#define WIFI_OPENAT_CMD_TIMEOUT      10000
 
 /* Function prototypes */
-scheduler_callback wifi_openat_task_timer(u32 elapsed);
+static scheduler_callback wifi_openat_task_timer(u32 elapsed);
 
 /* Variables */
 static t_wifi_openat_state wifi_openat_state = WIFI_OPENAT_STATE_UNDEFINED;
-static u8 wifi_openat_uart_buffer[WIFI_OPENAT_UART_BUFFER_SIZE];
-static size_t wifi_openat_uart_buffer_size = 0;
 static scheduler_entry_t wifi_openat_task_timer_entry = {0, 10, wifi_openat_task_timer};
 static u32 wifi_openat_timer = 0;
 
-static u8 wifi_openat_recv_buffer[WIFI_OPENAT_RECV_BUFFER_SIZE];
 static size_t wifi_openat_recv_buffer_size;
+static u8 wifi_openat_recv_buffer[WIFI_OPENAT_RECV_BUFFER_SIZE];
 
-static u8 wifi_openat_send_buffer[WIFI_OPENAT_RECV_BUFFER_SIZE];
+static u8 wifi_openat_send_buffer[WIFI_OPENAT_SEND_BUFFER_SIZE];
 static size_t wifi_openat_send_buffer_size;
+static size_t wifi_openat_recv_buffer_nbytes;
 
 
 /*
@@ -51,7 +52,7 @@ t_wifi_openat_return wifi_openat_send_cmd(uint8_t *cmd) {
     if (wifi_openat_state == WIFI_OPENAT_STATE_IDLE) {
 
         /* Send command */
-        wifi_uart_write(cmd, strlen((char*)cmd));
+        wifi_uart_write(cmd, strlen((char *) cmd));
 
         /* Go to busy state */
         wifi_openat_state = WIFI_OPENAT_STATE_BUSY;
@@ -75,7 +76,7 @@ t_wifi_openat_return wifi_openat_send_data(uint8_t *cmd, uint8_t *data, size_t l
         wifi_openat_send_buffer_size = len;
 
         /* Send command */
-        wifi_uart_write(cmd, strlen((char*)cmd));
+        wifi_uart_write(cmd, strlen((char *) cmd));
 
         /* Go to busy state */
         wifi_openat_state = WIFI_OPENAT_STATE_WAIT_FOR_DATA;
@@ -89,35 +90,62 @@ t_wifi_openat_return wifi_openat_send_data(uint8_t *cmd, uint8_t *data, size_t l
     return ret;
 }
 
-size_t wifi_openat_recv(uint8_t* buf) {
-    return 0;
+size_t wifi_openat_tcp_available(void) {
+    /* Read and concatenate until it reads all bytes */
+    size_t n_available = wifi_uart_available();
+
+    /* All bytes have been received */
+    if ((wifi_openat_state != WIFI_OPENAT_STATE_RECEIVING) || (n_available < wifi_openat_recv_buffer_size)) {
+        n_available = 0;
+    }
+
+    return n_available;
+}
+
+size_t wifi_openat_tcp_recv(uint8_t *buf) {
+    /* Read and concatenate until it reads all bytes */
+    size_t ret, n_available;
+
+    n_available = wifi_uart_available();
+
+    /* All bytes have been received */
+    if ((wifi_openat_state == WIFI_OPENAT_STATE_RECEIVING) && (n_available >= wifi_openat_recv_buffer_size)) {
+        ret = wifi_uart_read(buf, wifi_openat_recv_buffer_size);
+
+        /* Clear State */
+        wifi_openat_state = WIFI_OPENAT_STATE_IDLE;
+    } else {
+        ret = 0;
+    }
+
+    return ret;
 }
 
 size_t wifi_openat_read(u8 *buf, size_t maxlen) {
 
     size_t n;
-    if (wifi_openat_uart_buffer_size > maxlen) {
+    if (wifi_openat_recv_buffer_size > maxlen) {
         n = maxlen;
     } else {
-        n = wifi_openat_uart_buffer_size;
+        n = wifi_openat_recv_buffer_size;
     }
 
-    (void) memcpy(buf, wifi_openat_uart_buffer, wifi_openat_uart_buffer_size);
+    (void) memcpy(buf, wifi_openat_recv_buffer, n);
 
-    wifi_openat_uart_buffer_size = 0;
+    wifi_openat_recv_buffer_size = 0;
     wifi_openat_state = WIFI_OPENAT_STATE_IDLE;
 
     return n;
 }
 
 /* FSM state Routines */
-scheduler_callback wifi_openat_task_timer(u32 elapsed) {
+static scheduler_callback wifi_openat_task_timer(u32 elapsed) {
     wifi_openat_timer += elapsed;
 
     return NULL;
 }
 
-void wifi_openat_state_undefined() {
+static void wifi_openat_state_undefined(void) {
     uint8_t cmd[] = "AT+RST\r\n";
     wifi_uart_write(cmd, sizeof(cmd));
 
@@ -125,42 +153,54 @@ void wifi_openat_state_undefined() {
     wifi_openat_state = WIFI_OPENAT_STATE_IDLE;
 }
 
-void wifi_openat_state_idle() {
-    size_t n_recv = wifi_uart_read(wifi_openat_recv_buffer, WIFI_OPENAT_RECV_BUFFER_SIZE - 1);
+static void wifi_openat_state_idle(void) {
+    size_t n_recv = wifi_uart_read_key(wifi_openat_recv_buffer, WIFI_OPENAT_RECV_BUFFER_SIZE - 1,
+                                       (uint8_t *) "+IPD,4,");
+    int32_t nbytes = -1;
+
     if (n_recv > 0) {
         wifi_openat_recv_buffer[n_recv] = 0;
-        wifi_openat_recv_buffer_size = n_recv;
+        xil_printf("[%s] Data received\r\n%s\r\n", __FUNCTION__, (char *) wifi_openat_recv_buffer);
 
-        xil_printf("[%s] Data received\r\n%s\r\n", __FUNCTION__, wifi_openat_recv_buffer);
+        /* Parse nbytes */
+        n_recv = wifi_uart_read_key(wifi_openat_recv_buffer, WIFI_OPENAT_RECV_BUFFER_SIZE - 1, (uint8_t *) ":");
+        wifi_openat_recv_buffer[n_recv - 1] = 0;
+        nbytes = atoi((char *) wifi_openat_recv_buffer);
+    }
 
-        wifi_openat_state = WIFI_OPENAT_STATE_IDLE;
-    }else {
+    if (nbytes > 0) {
+        /* Set buffer size */
+        wifi_openat_recv_buffer_nbytes = (size_t) 0;
+        wifi_openat_recv_buffer_size = (size_t) nbytes;
+
+        wifi_openat_state = WIFI_OPENAT_STATE_RECEIVING;
+    } else {
         /* Do nothing, keep being in IDLE */
         wifi_openat_state = WIFI_OPENAT_STATE_IDLE;
     }
 }
 
-void wifi_openat_state_busy() {
+static void wifi_openat_state_busy(void) {
     u32 n_ok, n_err = 0;
 
     /* Read response */
-    n_ok = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1, (uint8_t*)"OK\r\n");
+    n_ok = wifi_uart_read_key(wifi_openat_recv_buffer, WIFI_OPENAT_RECV_BUFFER_SIZE - 1, (uint8_t *) "OK\r\n");
     if (n_ok == 0) {
-    	n_err = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE - 1, (uint8_t*)"ERROR\r\n");
+        n_err = wifi_uart_read_key(wifi_openat_recv_buffer, WIFI_OPENAT_RECV_BUFFER_SIZE - 1, (uint8_t *) "ERROR\r\n");
     }
 
     /* Take decision */
     if (n_ok > 0) {
         /* Set last byte to zero */
-        wifi_openat_uart_buffer[n_ok] = 0;
-        wifi_openat_uart_buffer_size = n_ok;
+        wifi_openat_recv_buffer[n_ok] = 0;
+        wifi_openat_recv_buffer_size = n_ok;
 
         /* Change state */
         wifi_openat_state = WIFI_OPENAT_STATE_DONE_OK;
     } else if (n_err > 0) {
         /* Set last byte to zero */
-        wifi_openat_uart_buffer[n_err] = 0;
-        wifi_openat_uart_buffer_size = n_err;
+        wifi_openat_recv_buffer[n_err] = 0;
+        wifi_openat_recv_buffer_size = n_err;
 
         /* Change state */
         wifi_openat_state = WIFI_OPENAT_STATE_DONE_ERROR;
@@ -175,18 +215,18 @@ void wifi_openat_state_busy() {
     }
 }
 
-static void wifi_openat_state_done_ok() {
+static void wifi_openat_state_done_ok(void) {
     /* Do nothing, keep being in DONE_OK */
     wifi_openat_state = WIFI_OPENAT_STATE_DONE_OK;
 }
 
-static void wifi_openat_state_done_error() {
+static void wifi_openat_state_done_error(void) {
     /* Do nothing, keep being in DONE_ERROR */
     wifi_openat_state = WIFI_OPENAT_STATE_IDLE;
 }
 
-static void wifi_openat_state_wait_for_data() {
-    size_t n_ok = wifi_uart_read_key(wifi_openat_uart_buffer, WIFI_OPENAT_UART_BUFFER_SIZE, ">");
+static void wifi_openat_state_wait_for_data(void) {
+    size_t n_ok = wifi_uart_read_key(wifi_openat_recv_buffer, WIFI_OPENAT_RECV_BUFFER_SIZE, (uint8_t *) ">");
 
     if (n_ok > 0) {
         /* Print trace */
@@ -198,10 +238,15 @@ static void wifi_openat_state_wait_for_data() {
         /* Do nothing, keep being in DONE_ERROR */
         wifi_openat_state = WIFI_OPENAT_STATE_BUSY;
 
-    }else {
+    } else {
         /* Do nothing, keep being in DONE_ERROR */
         wifi_openat_state = WIFI_OPENAT_STATE_WAIT_FOR_DATA;
     }
+}
+
+static void wifi_openat_receiving(void) {
+    /* Keep the same state */
+    wifi_openat_state = WIFI_OPENAT_STATE_RECEIVING;
 }
 
 /*
@@ -213,6 +258,10 @@ void wifi_openat_init(void) {
 
     /* Add task entry to the scheduler */
     scheduler_add_entry(&wifi_openat_task_timer_entry);
+
+    /* Set all global variables to zero */
+    wifi_openat_recv_buffer_size = 0;
+    wifi_openat_recv_buffer_nbytes = 0;
 
     /* Initialise FSM state */
     wifi_openat_state = WIFI_OPENAT_STATE_UNDEFINED;
@@ -249,6 +298,9 @@ void wifi_openat_task(void) {
             break;
         case WIFI_OPENAT_STATE_WAIT_FOR_DATA:
             wifi_openat_state_wait_for_data();
+            break;
+        case WIFI_OPENAT_STATE_RECEIVING:
+            wifi_openat_receiving();
             break;
         default:
             wifi_openat_state = WIFI_OPENAT_STATE_UNDEFINED;

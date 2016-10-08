@@ -13,7 +13,7 @@
 #include "wifi_cfg.h"
 
 /* Defines */
-#define WIFI_UART_MAX_BUF 512
+#define WIFI_UART_MAX_BUF 4096
 #define WIFI_CMD_MAX_LEN 64
 
 /* Function prototypes */
@@ -186,7 +186,9 @@ static void wifi_esp8266_cwlap (void) {
 
         /* Look for the desired AP */
         for (k = 0; (k < wifi_ap_list.count) && (ap_ssid_detected == FALSE); k++) {
-        	/* Compare */
+            xil_printf("[%s] WiFi AP '%s' \r\n", __FUNCTION__, (char*)wifi_ap_list.entries[k].ssid);
+
+            /* Compare */
 			if (strncmp((char*)wifi_ap_list.entries[k].ssid,
 					WIFI_CFG_SSID, WIFI_AP_SSID_MAXLEN) == 0) {
 				ap_ssid_detected = TRUE;
@@ -357,7 +359,14 @@ void wifi_esp8266_connecting (void){
 }
 
 void wifi_esp8266_connected (void){
+    size_t n_recv;
 	t_wifi_openat_state wifi_openat_state = wifi_openat_get_state();
+
+    if (wifi_openat_tcp_available() > 0) {
+        n_recv = wifi_openat_tcp_recv(wifi_esp8266_buffer);
+        wifi_esp8266_buffer[n_recv] = 0;
+        xil_printf("[%s] TCP %d bytes received\r\n%s\r\n", __FUNCTION__, n_recv, wifi_esp8266_buffer);
+    }
 
 	/* Evaluate state */
 	if (wifi_openat_state == WIFI_OPENAT_STATE_DONE_OK){

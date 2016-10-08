@@ -7,7 +7,7 @@
 #include "xuartlite_l.h"
 #include "xparameters.h"
 
-#define WIFI_UART_BUFF_SIZE_POW (11)
+#define WIFI_UART_BUFF_SIZE_POW (12)
 #define WIFI_UART_BUFF_SIZE (1<<WIFI_UART_BUFF_SIZE_POW)
 #define WIFI_UART_BUFF_MOD(X) (((u32) X ) & (WIFI_UART_BUFF_SIZE - 1))
 
@@ -74,33 +74,6 @@ u32 wifi_uart_read(u8 *buf, u32 maxsize) {
 	}
 
 	return n;
-}
-
-u32 wifi_uart_read_ERROR(char *buf, u32 maxsize) {
-    u32 n = wifi_uart_available();
-    u32 count = 0, ptr = wifi_uart_buff_read_ptr;
-
-    if (maxsize < n)
-        n = maxsize;
-
-    for (count = 0; ((count < n) && !(
-            (wifi_uart_rx_buff[WIFI_UART_BUFF_MOD(ptr + 0)] == 'E') &&
-            (wifi_uart_rx_buff[WIFI_UART_BUFF_MOD(ptr + 1)] == 'R') &&
-            (wifi_uart_rx_buff[WIFI_UART_BUFF_MOD(ptr + 2)] == 'R') &&
-            (wifi_uart_rx_buff[WIFI_UART_BUFF_MOD(ptr + 3)] == 'O') &&
-            (wifi_uart_rx_buff[WIFI_UART_BUFF_MOD(ptr + 4)] == 'R') &&
-            (wifi_uart_rx_buff[WIFI_UART_BUFF_MOD(ptr + 5)] == '\r'))); count ++){
-        ptr = WIFI_UART_BUFF_MOD(ptr + 1);
-    }
-    //xil_printf("%d, %d, %s\r\n", n, count, &wifi_uart_rx_buff[wifi_uart_buff_read_ptr]);
-
-    if (count == n) {
-        n = 0;
-    } else {
-        n = wifi_uart_read((u8*)buf, count + 4);
-    }
-
-    return n;
 }
 
 size_t wifi_uart_read_key(uint8_t *buf, size_t maxsize, uint8_t *key) {
