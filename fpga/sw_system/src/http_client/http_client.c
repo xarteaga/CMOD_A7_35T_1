@@ -1,5 +1,6 @@
 /* C Standard Includes */
 #include <stdio.h>
+#include <wifi_openat.h>
 
 /* BSP & Xilinx INcludes */
 #include "xil_types.h"
@@ -9,11 +10,14 @@
 #include "scheduler.h"
 #include "wifi_esp8266.h"
 #include "wifi_cfg.h"
+#include "buffer.h"
 
 /* Function prototypes */
 scheduler_callback http_client_task_poll(uint32_t elapsed);
 
 /* variables */
+static t_buffer http_client_buffer_send;
+static t_buffer http_client_buffer_recv;
 static t_http_client_state http_client_state = HTTP_CLIENT_STATE_UNDEFINED;
 static scheduler_entry_t http_client_task_poll_entry = {0, 10000, http_client_task_poll};
 
@@ -22,7 +26,8 @@ scheduler_callback http_client_task_poll(u32 elapsed) {
 		xil_printf("[%s] HTTP Client connecting...\r\n", __FUNCTION__);
 
 		/* Send Connect */
-		wifi_esp8266_connect((uint8_t*)HTTP_CLIENT_SERVER_ADDR, HTTP_CLIENT_SERVER_PORT);
+		wifi_esp8266_connect((uint8_t*)HTTP_CLIENT_SERVER_ADDR, HTTP_CLIENT_SERVER_PORT, &http_client_buffer_send,
+                             &http_client_buffer_recv);
 
 		/* Go to connecting */
 		http_client_state = HTTP_CLIENT_STATE_CONNECTING;
@@ -69,7 +74,7 @@ static void http_client_connecting (void) {
         xil_printf("[%s] HTTP Client connected... Sending request... \r\n", __FUNCTION__);
 
         /* Send message */
-        wifi_esp8266_send(http_request, sizeof(http_request));
+        buffer_write_string(&http_client_buffer_send, http_request);
 
         /* Go to sending */
         http_client_state = HTTP_CLIENT_STATE_SENDING;
@@ -78,8 +83,8 @@ static void http_client_connecting (void) {
         xil_printf("[%s] HTTP Client connection failed... Retrying...\r\n", __FUNCTION__);
 
         /* Send Connect */
-        wifi_esp8266_connect((uint8_t*)HTTP_CLIENT_SERVER_ADDR, HTTP_CLIENT_SERVER_PORT);
-
+        wifi_esp8266_connect((uint8_t*)HTTP_CLIENT_SERVER_ADDR, HTTP_CLIENT_SERVER_PORT, &http_client_buffer_send,
+                             &http_client_buffer_recv);
         http_client_state = HTTP_CLIENT_STATE_CONNECTING;
 	} else {
 		/* keep same state */
@@ -90,11 +95,17 @@ static void http_client_connecting (void) {
 static void http_client_sending (void) {
 	t_wifi_esp8266_state wifi_esp8266_state = wifi_esp8266_get_state();
 
-	if (wifi_esp8266_state == WIFI_ESP8266_STATE_READY) {
+    if (wifi_esp8266_state == WIFI_ESP8266_STATE_CONNECTED) {
         xil_printf("[%s] HTTP Request sent... Waiting for reply... \r\n", __FUNCTION__);
 
-		/* Go to idle */
-		http_client_state = HTTP_CLIENT_STATE_RECEIVING;
+        /* Go to idle */
+        http_client_state = HTTP_CLIENT_STATE_RECEIVING;
+    } else if ((wifi_esp8266_state != WIFI_ESP8266_STATE_SENDING) &&
+            (wifi_esp8266_state != WIFI_ESP8266_STATE_CONNECTED)) {
+        xil_printf("[%s] WiFi Module is not Conencting anymore, going to IDLE...\r\n", __FUNCTION__);
+
+        /* Go to idle */
+        http_client_state = HTTP_CLIENT_STATE_IDLE;
 	} else {
 		/* keep same state */
 		http_client_state = HTTP_CLIENT_STATE_SENDING;
@@ -102,10 +113,25 @@ static void http_client_sending (void) {
 }
 
 static void http_client_receiving (void) {
+    uint8_t temp[2048];
+    size_t n = 0;
 	t_wifi_esp8266_state wifi_esp8266_state = wifi_esp8266_get_state();
 
-	if (wifi_esp8266_state == WIFI_ESP8266_STATE_READY) {
+    if (buffer_available(&http_client_buffer_recv) > 0) {
+        n = buffer_read(&http_client_buffer_recv, temp, 2048);
+        temp[n] = 0;
+
+        if (n > 0){
+            xil_printf("[%s] HTTP Reply received: \r\n%s\r\n", __FUNCTION__, temp);
+        }
+
+    }
+
+
+	if (n > 0) {
         xil_printf("[%s] HTTP Reply received... Disconnecting... \r\n", __FUNCTION__);
+
+        wifi_esp8266_disconnect();
 
 		/* Go to idle */
 		http_client_state = HTTP_CLIENT_STATE_DISCONNECTING;
@@ -131,8 +157,20 @@ static void http_client_disconnecting (void) {
 
 /* Initiation routine */
 void http_client_init ( void ) {
+    t_buffer_return err;
+
     /* Add polling task to scheduler */
     scheduler_add_entry(&http_client_task_poll_entry);
+
+    /* Initialise buffers */
+    err = buffer_create(&http_client_buffer_send, HTTP_CLIENT_SEND_BUFFER_SIZE);
+    if (err < BUFFER_ERROR_OK) {
+        buffer_print_error(__FUNCTION__, &http_client_buffer_send);
+    }
+    err = buffer_create(&http_client_buffer_recv, HTTP_CLIENT_SEND_BUFFER_SIZE);
+    if (err < BUFFER_ERROR_OK) {
+        buffer_print_error(__FUNCTION__, &http_client_buffer_recv);
+    }
 
     /* Set undefined state by default */
     http_client_state = HTTP_CLIENT_STATE_UNDEFINED;

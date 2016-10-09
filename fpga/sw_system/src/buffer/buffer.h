@@ -5,12 +5,14 @@
 #include <inttypes.h>
 
 typedef enum {
-    BUFFER_RETURN_NOT_OK = -1,
-    BUFFER_RETURN_FAIL_ALLOCATION = -2,
-    BUFFER_RETURN_READ_EMPTY_BUFFER = -3,
-    BUFFER_RETURN_WRITE_FULL_BUFFER = -3,
-    BUFFER_RETURN_NULL_POINTER = -4,
-    BUFFER_RETURN_OK = 0
+    BUFFER_ERROR_NOT_OK = -1,
+    BUFFER_ERROR_FAIL_ALLOCATION = -2,
+    BUFFER_ERROR_READ_EMPTY_BUFFER = -4,
+    BUFFER_ERROR_WRITE_FULL_BUFFER = -5,
+    BUFFER_ERROR_NULL_POINTER = -6,
+    BUFFER_ERROR_ALREADY_ALLOCATED = -7,
+    BUFFER_ERROR_FUNCTION_NOT_SUPPORTED = -8,
+    BUFFER_ERROR_OK = 0
 } t_buffer_return;
 
 typedef struct {
@@ -21,16 +23,18 @@ typedef struct {
     t_buffer_return error;
 } t_buffer;
 
+void buffer_print_error (const char *func_name, t_buffer *buffer);
+
 inline t_buffer_return buffer_create(t_buffer *buffer, size_t size);
 
 inline size_t buffer_available(t_buffer *buffer);
 
 inline t_buffer_return buffer_read_byte(t_buffer *buffer, uint8_t *byte);
 
+size_t buffer_read(t_buffer *buffer, uint8_t *data, size_t max_size);
+
 inline t_buffer_return buffer_write_byte(t_buffer *buffer, uint8_t *byte);
 
 t_buffer_return buffer_write_string(t_buffer *buffer, uint8_t *str);
-
-inline t_buffer_return buffer_free(t_buffer *buffer);
 
 #endif //SW_SYSTEM_BUFFER_H

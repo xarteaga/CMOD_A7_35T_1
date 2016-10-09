@@ -2,9 +2,9 @@
 /* Standard C Includes */
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 /* Xilinx Includes */
-#include <xbasic_types.h>
 #include "xintc.h"
 
 /* Project Includes */
@@ -12,13 +12,13 @@
 
 /* Variables */
 extern XIntc platform_intc;
-static u32 timestamp = 0;
-scheduler_entry_t *scheduler_entries [SCHEDULER_MAX_ENTRIES];
-u32 scheduler_entries_count;
-Xboolean scheduler_busy = TRUE;
+static uint32_t timestamp = 0;
+static scheduler_entry_t *scheduler_entries [SCHEDULER_MAX_ENTRIES];
+static uint32_t scheduler_entries_count;
+static uint8_t scheduler_busy = TRUE;
 
 void scheduler_interrupt_handler(void){
-    u32 i = 0, elapsed = 0;
+    uint32_t i = 0, elapsed = 0;
 
     /* Check if it is busy */
     if (scheduler_busy == FALSE) {

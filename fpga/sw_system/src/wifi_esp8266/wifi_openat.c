@@ -8,10 +8,12 @@
 #include "wifi_openat.h"
 #include "wifi_uart.h"
 #include "scheduler.h"
+#include "buffer.h"
+#include "wifi_cfg.h"
 
 /* Definitions */
-#define WIFI_OPENAT_SEND_BUFFER_SIZE 4096
-#define WIFI_OPENAT_RECV_BUFFER_SIZE 4096
+#define WIFI_OPENAT_SEND_BUFFER_SIZE 512
+#define WIFI_OPENAT_RECV_BUFFER_SIZE 512
 #define WIFI_OPENAT_CMD_TIMEOUT      10000
 
 /* Function prototypes */
@@ -22,25 +24,19 @@ static t_wifi_openat_state wifi_openat_state = WIFI_OPENAT_STATE_UNDEFINED;
 static scheduler_entry_t wifi_openat_task_timer_entry = {0, 10, wifi_openat_task_timer};
 static u32 wifi_openat_timer = 0;
 
+static uint8_t wifi_openat_recv_buffer[WIFI_OPENAT_RECV_BUFFER_SIZE];
 static size_t wifi_openat_recv_buffer_size;
-static u8 wifi_openat_recv_buffer[WIFI_OPENAT_RECV_BUFFER_SIZE];
 
 static u8 wifi_openat_send_buffer[WIFI_OPENAT_SEND_BUFFER_SIZE];
 static size_t wifi_openat_send_buffer_size;
-static size_t wifi_openat_recv_buffer_nbytes;
 
+static size_t tcp_recv_nbytes;
+static t_buffer *tcp_recv_buffer;
 
 /*
  * FSM Interface functions
  */
 t_wifi_openat_state wifi_openat_get_state(void) {
-
-    /*if (wifi_openat_state == WIFI_OPENAT_STATE_DONE_ERROR) {
-        wifi_openat_state = WIFI_OPENAT_STATE_IDLE;
-    } else if (wifi_openat_state == WIFI_OPENAT_STATE_DONE_OK) {
-        wifi_openat_state = WIFI_OPENAT_STATE_IDLE;
-    }*/
-
     /* Return current state */
     return wifi_openat_state;
 }
@@ -90,39 +86,11 @@ t_wifi_openat_return wifi_openat_send_data(uint8_t *cmd, uint8_t *data, size_t l
     return ret;
 }
 
-size_t wifi_openat_tcp_available(void) {
-    /* Read and concatenate until it reads all bytes */
-    size_t n_available = wifi_uart_available();
-
-    /* All bytes have been received */
-    if ((wifi_openat_state != WIFI_OPENAT_STATE_RECEIVING) || (n_available < wifi_openat_recv_buffer_size)) {
-        n_available = 0;
-    }
-
-    return n_available;
-}
-
-size_t wifi_openat_tcp_recv(uint8_t *buf) {
-    /* Read and concatenate until it reads all bytes */
-    size_t ret, n_available;
-
-    n_available = wifi_uart_available();
-
-    /* All bytes have been received */
-    if ((wifi_openat_state == WIFI_OPENAT_STATE_RECEIVING) && (n_available >= wifi_openat_recv_buffer_size)) {
-        ret = wifi_uart_read(buf, wifi_openat_recv_buffer_size);
-
-        /* Clear State */
-        wifi_openat_state = WIFI_OPENAT_STATE_IDLE;
-    } else {
-        ret = 0;
-    }
-
-    return ret;
+void wifi_openat_set_tcp_recv_buffer(t_buffer *_tcp_recv_buffer) {
+    tcp_recv_buffer = _tcp_recv_buffer;
 }
 
 size_t wifi_openat_read(u8 *buf, size_t maxlen) {
-
     size_t n;
     if (wifi_openat_recv_buffer_size > maxlen) {
         n = maxlen;
@@ -160,7 +128,10 @@ static void wifi_openat_state_idle(void) {
 
     if (n_recv > 0) {
         wifi_openat_recv_buffer[n_recv] = 0;
+
+#if OPENAT_DEBUG_TRACES == 1
         xil_printf("[%s] Data received\r\n%s\r\n", __FUNCTION__, (char *) wifi_openat_recv_buffer);
+#endif /* OPENAT_DEBUG_TRACES == 1 */
 
         /* Parse nbytes */
         n_recv = wifi_uart_read_key(wifi_openat_recv_buffer, WIFI_OPENAT_RECV_BUFFER_SIZE - 1, (uint8_t *) ":");
@@ -170,8 +141,11 @@ static void wifi_openat_state_idle(void) {
 
     if (nbytes > 0) {
         /* Set buffer size */
-        wifi_openat_recv_buffer_nbytes = (size_t) 0;
-        wifi_openat_recv_buffer_size = (size_t) nbytes;
+        tcp_recv_nbytes = (size_t) nbytes;
+
+#if OPENAT_DEBUG_TRACES == 1
+        xil_printf("[%s] Receiving %d bytes\r\n", __FUNCTION__, (char *) tcp_recv_nbytes);
+#endif /* OPENAT_DEBUG_TRACES == 1 */
 
         wifi_openat_state = WIFI_OPENAT_STATE_RECEIVING;
     } else {
@@ -205,7 +179,9 @@ static void wifi_openat_state_busy(void) {
         /* Change state */
         wifi_openat_state = WIFI_OPENAT_STATE_DONE_ERROR;
     } else if (wifi_openat_timer > WIFI_OPENAT_CMD_TIMEOUT) {
+#if OPENAT_DEBUG_TRACES == 1
         xil_printf("[%s] Timeout \r\n", __FUNCTION__);
+#endif /* OPENAT_DEBUG_TRACES == 1 */
 
         /* Change state */
         wifi_openat_state = WIFI_OPENAT_STATE_DONE_ERROR;
@@ -230,7 +206,9 @@ static void wifi_openat_state_wait_for_data(void) {
 
     if (n_ok > 0) {
         /* Print trace */
-        xil_printf("[%s] Ready for sending data\r\n%s\r\n", __FUNCTION__, wifi_openat_send_buffer);
+#if OPENAT_DEBUG_TRACES == 1
+        xil_printf("[%s] Ready for sending data:\r\n%s\r\n", __FUNCTION__, wifi_openat_send_buffer);
+#endif /* OPENAT_DEBUG_TRACES == 1 */
 
         /* Send stored data */
         wifi_uart_write(wifi_openat_send_buffer, wifi_openat_send_buffer_size);
@@ -245,8 +223,46 @@ static void wifi_openat_state_wait_for_data(void) {
 }
 
 static void wifi_openat_receiving(void) {
-    /* Keep the same state */
-    wifi_openat_state = WIFI_OPENAT_STATE_RECEIVING;
+    uint8_t byte;
+    size_t n = 0;
+    uint32_t i;
+    size_t n_uart_available = wifi_uart_available();
+    size_t n_buffer_free = tcp_recv_buffer->size - buffer_available(tcp_recv_buffer);
+
+    /* Limit available bytes to the current received packet */
+    if (n_uart_available > tcp_recv_nbytes) {
+        n_uart_available = tcp_recv_nbytes;
+    }
+
+    /* Check buffer availability */
+    if (n_uart_available > n_buffer_free) {
+        n = n_buffer_free;
+    } else {
+        n = n_uart_available;
+    }
+
+    /* Write buffer */
+    for (i = 0; i < n; i++) {
+        (void) wifi_uart_read(&byte, 1);
+        (void) buffer_write_byte(tcp_recv_buffer, &byte);
+    }
+
+    /* Subtract number of received bytes */
+    tcp_recv_nbytes -= n;
+
+    /* Check if all the bytes have been received */
+    if (tcp_recv_nbytes == 0) {
+#if OPENAT_DEBUG_TRACES == 1
+        xil_printf("[%s] All Bytes have been received (%d), going back to idle...\r\n", __FUNCTION__,
+                   buffer_available(tcp_recv_buffer));
+#endif /* OPENAT_DEBUG_TRACES == 1 */
+
+        /* Go to idle */
+        wifi_openat_state = WIFI_OPENAT_STATE_IDLE;
+    } else {
+        /* Keep the same state */
+        wifi_openat_state = WIFI_OPENAT_STATE_RECEIVING;
+    }
 }
 
 /*
@@ -261,7 +277,9 @@ void wifi_openat_init(void) {
 
     /* Set all global variables to zero */
     wifi_openat_recv_buffer_size = 0;
-    wifi_openat_recv_buffer_nbytes = 0;
+    wifi_openat_send_buffer_size = 0;
+    tcp_recv_nbytes = 0;
+    tcp_recv_buffer = NULL;
 
     /* Initialise FSM state */
     wifi_openat_state = WIFI_OPENAT_STATE_UNDEFINED;

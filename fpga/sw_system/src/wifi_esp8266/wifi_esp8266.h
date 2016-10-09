@@ -5,6 +5,9 @@
 /* BSP anx Xilinx Includes */
 #include "xparameters.h"
 
+/* Project includes */
+#include "buffer.h"
+
 #define WIFI_AP_SSID_MAXLEN 16
 #define WIFI_AP_MAXNUM      16
 
@@ -45,7 +48,7 @@ t_wifi_esp8266_state wifi_esp8266_get_state(void);
 void wifi_esp8266_init ( void );
 void wifi_esp8266_task ( void );
 
-void wifi_esp8266_connect(uint8_t *addr, uint16_t port);
-void wifi_esp8266_send(uint8_t *msg, size_t size);
+void wifi_esp8266_connect(uint8_t *addr, uint16_t port, t_buffer *send_buf, t_buffer *recv_buf);
+void wifi_esp8266_disconnect(void);
 
 #endif /* _WIFI_ESP8266_H */

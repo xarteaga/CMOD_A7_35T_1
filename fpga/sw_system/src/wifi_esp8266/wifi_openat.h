@@ -2,7 +2,11 @@
 #ifndef _WIFI_OPENAT_C_H
 #define _WIFI_OPENAT_C_H
 
-#include <xenv.h>
+/* Standard C includes */
+#include <inttypes.h>
+
+/* Project includes */
+#include <buffer.h>
 
 #define WIFI_OPENAT_AP_NAME_MAX 32
 #define WIFI_OPENAT_CWLAP_MAX   16
@@ -32,11 +36,11 @@ typedef void f_wifi_openat_sendat_cb (void);
 
 /* FSM Interfaces */
 t_wifi_openat_state wifi_openat_get_state(void);
-t_wifi_openat_return wifi_openat_send_cmd (u8 *cmd);
+t_wifi_openat_return wifi_openat_send_cmd (uint8_t *cmd);
 t_wifi_openat_return wifi_openat_send_data(uint8_t *cmd, uint8_t *data, size_t len);
-size_t wifi_openat_read (u8 *buf, size_t maxlen);
-size_t wifi_openat_tcp_available(void);
-size_t wifi_openat_tcp_recv(uint8_t *buf);
+void wifi_openat_set_tcp_recv_buffer(t_buffer *_tcp_recv_buffer);
+size_t wifi_openat_read (uint8_t *buf, size_t maxlen);
+void wifi_openat_set_tcp_recv_buffer(t_buffer *_tcp_recv_buffer);
 
 /* FSM init */
 void wifi_openat_init (void);
