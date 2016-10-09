@@ -22,12 +22,14 @@
  * WiFi ESP8266
  */
 #define WIFI_ESP8266_MAX_MSG_LEN        1500
+#define WIFI_AP_SSID_MAXLEN 16
+#define WIFI_AP_MAXNUM      16
 
 /*
  * DEBUG TRACES
  */
 #define BUFFER_DEBUG_TRACES             0
-#define ESP8266_DEBUG_TRACES            1
-#define OPENAT_DEBUG_TRACES             1
+#define ESP8266_DEBUG_TRACES            0
+#define OPENAT_DEBUG_TRACES             0
 
 #endif /* WIFI_CFG_H_ */

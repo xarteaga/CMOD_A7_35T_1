@@ -5,10 +5,10 @@
 #include <stdint.h>
 
 /* Project includes */
+#include "buffer.h"
 #include "wifi_openat.h"
 #include "wifi_uart.h"
 #include "scheduler.h"
-#include "buffer.h"
 #include "wifi_cfg.h"
 
 /* Definitions */

@@ -34,7 +34,7 @@ void scheduler_interrupt_handler(void){
             elapsed = (u32)(timestamp - entry->timestamp);
             if (elapsed >= entry->period) {
                 /* Call callback if required */
-                entry->callback((u32)elapsed);
+                ((scheduler_callback)entry->callback)((u32)elapsed);
 
                 /* Update timestamp */
                 entry->timestamp = timestamp;

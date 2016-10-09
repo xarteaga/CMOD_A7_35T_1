@@ -69,6 +69,7 @@ add_executable(sw_system
 # Directories
 include_directories(sw_system
 		sdk_workspace/bsp_0/microblaze_0/include
+		src/config
 		src/platform
 		src/wifi_esp8266
 		src/scheduler

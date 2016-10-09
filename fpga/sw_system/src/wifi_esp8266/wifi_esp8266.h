@@ -6,10 +6,8 @@
 #include "xparameters.h"
 
 /* Project includes */
+#include "wifi_cfg.h"
 #include "buffer.h"
-
-#define WIFI_AP_SSID_MAXLEN 16
-#define WIFI_AP_MAXNUM      16
 
 typedef enum {
 	WIFI_ESP8266_STATE_UNDEFINED = 0,

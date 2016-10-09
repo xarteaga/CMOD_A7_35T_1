@@ -7,28 +7,22 @@
 #include "xuartlite.h"
 
 /* Project includes */
-#include "wifi_esp8266.h"
-#include "wifi_openat.h"
-#include "scheduler.h"
-#include "wifi_utils.h"
 #include "wifi_cfg.h"
 #include "buffer.h"
+#include "wifi_esp8266.h"
+#include "wifi_openat.h"
+#include "wifi_utils.h"
 
 /* Defines */
 #define WIFI_UART_MAX_BUF   4096
 #define WIFI_CMD_MAX_LEN    64
 
-/* Function prototypes */
-scheduler_callback wifi_esp8266_task_poll(uint32_t elapsed);
-
 /* Variables */
-static u8 wifi_esp8266_buffer[WIFI_UART_MAX_BUF];
+static uint8_t wifi_esp8266_buffer[WIFI_UART_MAX_BUF];
 static size_t wifi_esp8266_buffer_size;
-static scheduler_entry_t wifi_esp8266_task_poll_entry = {0, 5000, wifi_esp8266_task_poll};
 static t_wifi_ap_list wifi_ap_list;
 static t_wifi_esp8266_state wifi_esp8266_state = WIFI_ESP8266_STATE_UNDEFINED;
 
-static t_buffer *wifi_esp8266_recv_buf = NULL;
 static t_buffer *wifi_esp8266_send_buf = NULL;
 
 void wifi_esp8266_connect(uint8_t *addr, uint16_t port, t_buffer *send_buf, t_buffer *recv_buf) {
@@ -38,7 +32,6 @@ void wifi_esp8266_connect(uint8_t *addr, uint16_t port, t_buffer *send_buf, t_bu
     if (wifi_esp8266_state == WIFI_ESP8266_STATE_READY) {
         /* Set buffers */
         wifi_esp8266_send_buf = send_buf;
-        wifi_esp8266_recv_buf = recv_buf;
         wifi_openat_set_tcp_recv_buffer(recv_buf);
 
         /* Build command */
@@ -48,8 +41,9 @@ void wifi_esp8266_connect(uint8_t *addr, uint16_t port, t_buffer *send_buf, t_bu
         /* Send command */
         (void) wifi_openat_send_cmd(cmd);
 
-        /* Print trace */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] Connecting to %s:%d ...\r\n", __func__, (char *) addr, (int) port);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Go to Linking state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CONNECTING;
@@ -68,30 +62,6 @@ void wifi_esp8266_disconnect(void) {
     }
 }
 
-void wifi_esp8266_send_Reset(void) {
-    t_wifi_openat_return openat_return = wifi_openat_send_cmd((uint8_t *) "AT+RST\r\n");
-    if (openat_return == WIFI_OPENAT_RETURN_NOK) {
-        xil_printf("[%s] wifi_openat_send_cmd returned %d\r\n", __FUNCTION__, openat_return);
-    }
-}
-
-scheduler_callback wifi_esp8266_task_poll(u32 elapsed) {
-    if (wifi_esp8266_state == WIFI_ESP8266_STATE_READY) {
-        /* Send command */
-        t_wifi_openat_return openat_return = wifi_openat_send_cmd((uint8_t *) "AT+CIFSR\r\n");
-
-        /* Check if the command has been put */
-        if (openat_return == WIFI_OPENAT_RETURN_NOK) {
-            xil_printf("[%s] OpenAT controller is Busy \r\n", __FUNCTION__);
-        } else {
-            //xil_printf("[%s] wifi_openat_send_cmd OK\r\n", __FUNCTION__);
-        }
-    }
-
-    /* return nothing */
-    return NULL;
-}
-
 void wifi_esp8266_undefined(void) {
     /* Set CWMODE
      * mode：
@@ -106,7 +76,9 @@ void wifi_esp8266_undefined(void) {
         /* Send Command */
         wifi_openat_send_cmd((uint8_t *) "AT+CWMODE=1\r\n");
 
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] Setting CWMODE to %d\r\n", __FUNCTION__, 1);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Go to next state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CWMODE;
@@ -116,8 +88,9 @@ void wifi_esp8266_undefined(void) {
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
 
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] %s\r\n", __FUNCTION__, wifi_esp8266_buffer);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Keep same state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_UNDEFINED;
@@ -136,11 +109,12 @@ void wifi_esp8266_cwmode(void) {
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
 
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] CWMODE returned OK... Scanning APs in range ...\r\n", __FUNCTION__);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Send CWLAP OpenAT command */
-        wifi_openat_send_cmd("AT+CWLAP\r\n");
+        wifi_openat_send_cmd((uint8_t *) "AT+CWLAP\r\n");
 
         /* Keep same state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CWLAP;
@@ -176,19 +150,20 @@ static void wifi_esp8266_cwlap(void) {
         /* Parse received buffer */
         (void) wifi_utils_parse_cwlap(wifi_esp8266_buffer, size, &wifi_ap_list);
 
-        //xil_printf("[%s] %s", __FUNCTION__, wifi_esp8266_buffer);
-
         /* Look for the desired AP */
         for (k = 0; (k < wifi_ap_list.count) && (ap_ssid_detected == FALSE); k++) {
-            xil_printf("[%s] WiFi AP '%s' \r\n", __FUNCTION__, (char *) wifi_ap_list.entries[k].ssid);
+#if ESP8266_DEBUG_TRACES == 1
+            xil_printf("[%s] %d) '%s' \r\n", __FUNCTION__, (int) k, (char *) wifi_ap_list.entries[k].ssid);
+#endif /* ESP8266_DEBUG_TRACES */
 
             /* Compare */
             if (strncmp((char *) wifi_ap_list.entries[k].ssid,
                         WIFI_CFG_SSID, WIFI_AP_SSID_MAXLEN) == 0) {
                 ap_ssid_detected = TRUE;
 
-                /* Send Debug trace */
+#if ESP8266_DEBUG_TRACES == 1
                 xil_printf("[%s] WiFi AP '%s' has been detected. Joining...\r\n", __FUNCTION__, WIFI_CFG_SSID);
+#endif /* ESP8266_DEBUG_TRACES */
             }
         }
     }
@@ -201,24 +176,24 @@ static void wifi_esp8266_cwlap(void) {
 
         /* Join Access Point */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CWJAP;
-    } else if ((ap_ssid_detected != TRUE) &&
-               (wifi_openat_state == WIFI_OPENAT_STATE_IDLE)) {
+    } else if (wifi_openat_state == WIFI_OPENAT_STATE_IDLE) {
         /* Re-send OpenAT command */
-        (void) wifi_openat_send_cmd("AT+CWLAP\r\n");
+        (void) wifi_openat_send_cmd((uint8_t *) "AT+CWLAP\r\n");
 
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] The desired AP was not found... Resending CWLAP ...\r\n", __FUNCTION__);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Keep same state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CWLAP;
-    } else if ((ap_ssid_detected != TRUE) &&
-               (wifi_openat_state == WIFI_OPENAT_STATE_DONE_ERROR)) {
+    } else if (wifi_openat_state == WIFI_OPENAT_STATE_DONE_ERROR) {
 
         /* Re-send OpenAT command */
-        (void) wifi_openat_send_cmd((uint8_t) "AT+CWLAP\r\n");
+        (void) wifi_openat_send_cmd((uint8_t *) "AT+CWLAP\r\n");
 
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] CWLAP returned FAIL... Resending CWLAP ...\r\n", __FUNCTION__);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Keep same state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CWLAP;
@@ -238,8 +213,9 @@ void wifi_esp8266_cwjap(void) {
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
 
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] Connected to AP with SSID '%s'...\r\n", __FUNCTION__, WIFI_CFG_SSID);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Keep same state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_GETTING_IP;
@@ -250,7 +226,9 @@ void wifi_esp8266_cwjap(void) {
         (void) wifi_openat_send_cmd(cmd);
 
         /* Send debug trace */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] Re-sending command for joining AP...\r\n", __FUNCTION__);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Keep same state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CWJAP;
@@ -269,10 +247,9 @@ void wifi_esp8266_getting_ip(void) {
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
 
-        /* TODO: parse IP address */
-
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] %s\r\n", __FUNCTION__, wifi_esp8266_buffer);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Configure for multiple connections */
         (void) wifi_openat_send_cmd((uint8_t *) "AT+CIPMUX=1\r\n");
@@ -301,10 +278,9 @@ void wifi_esp8266_cipmux(void) {
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
 
-        /* TODO: parse IP address */
-
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] %s\r\n", __FUNCTION__, wifi_esp8266_buffer);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Go to the next state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_READY;
@@ -334,7 +310,7 @@ void wifi_esp8266_connecting(void) {
 
         already_connected = TRUE;
     } else if ((wifi_openat_state == WIFI_OPENAT_STATE_DONE_ERROR) ||
-        (wifi_openat_state == WIFI_OPENAT_STATE_IDLE)) {
+               (wifi_openat_state == WIFI_OPENAT_STATE_IDLE)) {
         /* Flush read buffer */
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
@@ -342,7 +318,7 @@ void wifi_esp8266_connecting(void) {
         if (wifi_esp8266_buffer_size > sizeof(pattern)) {
             n = wifi_esp8266_buffer_size - sizeof(pattern) - 1;
             for (i = 0; (i < n) && (already_connected == FALSE); i++) {
-                if (strncmp(pattern, wifi_esp8266_buffer + i, sizeof(pattern) - 1) == 0) {
+                if (strncmp(pattern, (char *) wifi_esp8266_buffer + i, sizeof(pattern) - 1) == 0) {
                     already_connected = TRUE;
                 }
             }
@@ -352,15 +328,17 @@ void wifi_esp8266_connecting(void) {
 
     /* Evaluate state */
     if ((wifi_openat_state == WIFI_OPENAT_STATE_DONE_OK) || (already_connected == TRUE)) {
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] %s\r\n", __FUNCTION__, wifi_esp8266_buffer);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Success, go to connected */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CONNECTED;
     } else if ((wifi_openat_state == WIFI_OPENAT_STATE_DONE_ERROR) ||
                (wifi_openat_state == WIFI_OPENAT_STATE_IDLE)) {
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] Error connecting, going to IDLE...\r\n%s\r\n", __FUNCTION__, wifi_esp8266_buffer);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Failed, go back to ready */
         wifi_esp8266_state = WIFI_ESP8266_STATE_READY;
@@ -385,8 +363,9 @@ void wifi_esp8266_connected(void) {
         /* Send command */
         (void) wifi_openat_send_data(cmd, data, n_send);
 
-        /* Print trace */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] Sending to %d bytes ...\r\n", __FUNCTION__, (int) n_send);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Go to Linking state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_SENDING;
@@ -405,8 +384,9 @@ void wifi_esp8266_sending(void) {
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
 
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] Send data OK, going to CONNECTED...\r\n%s\r\n", __FUNCTION__, wifi_esp8266_buffer);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Success, go to connected */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CONNECTED;
@@ -417,8 +397,9 @@ void wifi_esp8266_sending(void) {
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
 
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] Send data failed, going to CONNECTED...\r\n%s\r\n", __FUNCTION__, wifi_esp8266_buffer);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Failed, go back to ready */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CONNECTED;
@@ -437,8 +418,9 @@ void wifi_esp8266_ready(void) {
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
 
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] ---\r\n %s\r\n---\r\n", __FUNCTION__, wifi_esp8266_buffer);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Keep same state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_READY;
@@ -455,8 +437,9 @@ static void wifi_esp8266_disconnecting(void) {
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
 
-        /* Print message */
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] TCP Connection closed... \r\n%s\r\n", __FUNCTION__, wifi_esp8266_buffer);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Success, go to connected */
         wifi_esp8266_state = WIFI_ESP8266_STATE_READY;
@@ -489,9 +472,6 @@ void wifi_esp8266_init(void) {
 
     /* Init AP list */
     wifi_ap_list.count = 0;
-
-    /* Add polling task to scheduler */
-    //scheduler_add_entry(&wifi_esp8266_task_poll_entry);
 
     xil_printf("%32s ... OK\r\n", __func__);
 }

@@ -6,11 +6,11 @@
 #include "xil_types.h"
 
 /* Project includes */
+#include "wifi_cfg.h"
+#include "buffer.h"
 #include "http_client.h"
 #include "scheduler.h"
 #include "wifi_esp8266.h"
-#include "wifi_cfg.h"
-#include "buffer.h"
 
 /* Function prototypes */
 scheduler_callback http_client_task_poll(uint32_t elapsed);
@@ -115,7 +115,6 @@ static void http_client_sending (void) {
 static void http_client_receiving (void) {
     uint8_t temp[2048];
     size_t n = 0;
-	t_wifi_esp8266_state wifi_esp8266_state = wifi_esp8266_get_state();
 
     if (buffer_available(&http_client_buffer_recv) > 0) {
         n = buffer_read(&http_client_buffer_recv, temp, 2048);
@@ -126,7 +125,6 @@ static void http_client_receiving (void) {
         }
 
     }
-
 
 	if (n > 0) {
         xil_printf("[%s] HTTP Reply received... Disconnecting... \r\n", __FUNCTION__);

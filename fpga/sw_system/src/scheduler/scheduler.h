@@ -13,7 +13,7 @@ typedef void (*scheduler_callback) (u32 elapsed);
 typedef struct {
     u32 timestamp;
     u32 period;
-    scheduler_callback callback;
+    void* callback;
 } scheduler_entry_t;
 
 void scheduler_interrupt_handler(void);

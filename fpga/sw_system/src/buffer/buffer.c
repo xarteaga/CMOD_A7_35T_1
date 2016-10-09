@@ -12,10 +12,6 @@
 static uint8_t buffer_memory[BUFFER_MAX_MEMORY];
 static size_t buffer_memory_allocated = 0;
 
-static size_t buffer_memory_free_bytes(void) {
-    return BUFFER_MAX_MEMORY - buffer_memory_allocated;
-}
-
 void buffer_print_error (const char *func_name, t_buffer *buffer) {
 #define PRINT_ERROR(e) case e: xil_printf("[%s] %s\r\n", func_name, #e); break
 #define PRINT_ERROR_DEFAULT(e) default: xil_printf("[%s] %s\r\n", func_name, #e)

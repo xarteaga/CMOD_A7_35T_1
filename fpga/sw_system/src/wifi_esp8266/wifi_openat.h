@@ -8,9 +8,6 @@
 /* Project includes */
 #include <buffer.h>
 
-#define WIFI_OPENAT_AP_NAME_MAX 32
-#define WIFI_OPENAT_CWLAP_MAX   16
-
 /* Data-types */
 typedef enum {
     WIFI_OPENAT_STATE_UNDEFINED = 0,
@@ -26,13 +23,6 @@ typedef enum {
     WIFI_OPENAT_RETURN_OK = 0,
     WIFI_OPENAT_RETURN_NOK = -1
 } t_wifi_openat_return;
-
-typedef struct {
-    char ap_name[WIFI_OPENAT_AP_NAME_MAX];
-    float rssi;
-} t_wifi_openat_cwlap_entry;
-
-typedef void f_wifi_openat_sendat_cb (void);
 
 /* FSM Interfaces */
 t_wifi_openat_state wifi_openat_get_state(void);
