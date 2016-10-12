@@ -12,6 +12,8 @@ add_library(wifi_esp8266
 		wifi_uart.h
 		wifi_openat.c
 		wifi_openat.h
+		wifi_gpio.c
+		wifi_gpio.h
 		wifi_utils.c
 		wifi_utils.h)
 

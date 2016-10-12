@@ -12,6 +12,7 @@
 #include "wifi_esp8266.h"
 #include "wifi_openat.h"
 #include "wifi_utils.h"
+#include "wifi_gpio.h"
 
 /* Defines */
 #define WIFI_UART_MAX_BUF   4096
@@ -187,12 +188,14 @@ static void wifi_esp8266_cwlap(void) {
         /* Keep same state */
         wifi_esp8266_state = WIFI_ESP8266_STATE_CWLAP;
     } else if (wifi_openat_state == WIFI_OPENAT_STATE_DONE_ERROR) {
+        size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
+        wifi_esp8266_buffer[size] = 0;
 
         /* Re-send OpenAT command */
         (void) wifi_openat_send_cmd((uint8_t *) "AT+CWLAP\r\n");
 
 #if ESP8266_DEBUG_TRACES == 1
-        xil_printf("[%s] CWLAP returned FAIL... Resending CWLAP ...\r\n", __FUNCTION__);
+        xil_printf("[%s] CWLAP returned FAIL... Resending CWLAP ...\r\n%s\r\n", __FUNCTION__, wifi_esp8266_buffer);
 #endif /* ESP8266_DEBUG_TRACES */
 
         /* Keep same state */
@@ -429,14 +432,36 @@ void wifi_esp8266_ready(void) {
 
 static void wifi_esp8266_disconnecting(void) {
     uint8_t cmd[] = "AT+CIPCLOSE=4\r\n";
+    char pattern[] = "UNLINK\r\n";
+    uint32_t i, n;
     t_wifi_openat_state wifi_openat_state = wifi_openat_get_state();
+    uint8_t already_disconnected = FALSE;
 
-    /* Evaluate state */
     if (wifi_openat_state == WIFI_OPENAT_STATE_DONE_OK) {
         /* Flush read buffer */
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
 
+        already_disconnected = TRUE;
+    } else if ((wifi_openat_state == WIFI_OPENAT_STATE_DONE_ERROR) ||
+               (wifi_openat_state == WIFI_OPENAT_STATE_IDLE)) {
+        /* Flush read buffer */
+        wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
+        wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
+
+        if (wifi_esp8266_buffer_size > sizeof(pattern)) {
+            n = wifi_esp8266_buffer_size - sizeof(pattern) - 1;
+            for (i = 0; (i < n) && (already_disconnected == FALSE); i++) {
+                if (strncmp(pattern, (char *) wifi_esp8266_buffer + i, sizeof(pattern) - 1) == 0) {
+                    already_disconnected = TRUE;
+                }
+            }
+        }
+
+    }
+
+    /* Evaluate state */
+    if (already_disconnected == TRUE) {
 #if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] TCP Connection closed... \r\n%s\r\n", __FUNCTION__, wifi_esp8266_buffer);
 #endif /* ESP8266_DEBUG_TRACES */
@@ -448,7 +473,9 @@ static void wifi_esp8266_disconnecting(void) {
         /* Flush read buffer */
         wifi_esp8266_buffer_size = wifi_openat_read(wifi_esp8266_buffer, WIFI_UART_MAX_BUF - 1);
         wifi_esp8266_buffer[wifi_esp8266_buffer_size] = 0;
+#if ESP8266_DEBUG_TRACES == 1
         xil_printf("[%s] TCP Connection close failed... Trying\r\n%s\r\n", __FUNCTION__, wifi_esp8266_buffer);
+#endif /* ESP8266_DEBUG_TRACES */
 
         /* Resend TCP close */
         wifi_openat_send_cmd(cmd);
@@ -469,6 +496,9 @@ t_wifi_esp8266_state wifi_esp8266_get_state(void) {
 void wifi_esp8266_init(void) {
     /* Init slave modules */
     wifi_openat_init();
+
+    /* Init WiFi GPIO */
+    wifi_gpio_enable();
 
     /* Init AP list */
     wifi_ap_list.count = 0;
