@@ -54,6 +54,7 @@ add_subdirectory(src/wifi_esp8266)
 add_subdirectory(src/scheduler)
 add_subdirectory(src/http_client)
 add_subdirectory(src/buffer)
+add_subdirectory(src/sd)
 
 project (sw_system C )
 
@@ -75,6 +76,7 @@ include_directories(sw_system
 		src/scheduler
 		src/http_client
 		src/buffer
+		src/sd
 		src
 	)
 
@@ -84,6 +86,7 @@ target_link_libraries(sw_system wifi_esp8266)
 target_link_libraries(sw_system scheduler)
 target_link_libraries(sw_system http_client)
 target_link_libraries(sw_system buffer)
+target_link_libraries(sw_system sd)
 
 link_directories(sw_system sdk_workspace/bsp_0/microblaze_0/lib)
 

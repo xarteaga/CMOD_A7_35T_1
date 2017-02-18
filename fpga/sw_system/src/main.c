@@ -11,6 +11,7 @@
 #include "wifi_esp8266.h"
 #include "scheduler.h"
 #include "http_client.h"
+#include "sd_spi.h"
 
 XGpio Gpio1;
 
@@ -22,20 +23,23 @@ int main() {
     scheduler_init();
     wifi_esp8266_init();
     http_client_init ();
+    sd_spi_init();
 
-    /* Enable Interrupts */
+    /* Enable Interrupts (after all initialization calls) */
     platform_enable_interrupts();
 
     (void) XGpio_Initialize(&Gpio1, XPAR_AXI_GPIO_0_DEVICE_ID);
+
+    sd_spi_send_command (SD_SPI_CMD0_GO_IDLE_STATE);
 
     while (TRUE) {
         wifi_esp8266_task();
         http_client_task();
 
         if (XGpio_DiscreteRead(&Gpio1, 2) != 0){
-            xil_printf("> AT\r\n");
-            while(XGpio_DiscreteRead(&Gpio1, 2) != 0);
-            //wifi_esp8266_send_CWLAP();
+            xil_printf("> SPI SD CMD0\r\n");
+            while(XGpio_DiscreteRead(&Gpio1, 2) != 0)
+                sd_spi_send_command(SD_SPI_CMD0_GO_IDLE_STATE);
 
         }
 

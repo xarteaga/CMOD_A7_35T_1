@@ -29,7 +29,7 @@
  * DEBUG TRACES
  */
 #define BUFFER_DEBUG_TRACES             0
-#define ESP8266_DEBUG_TRACES            0
+#define ESP8266_DEBUG_TRACES            1
 #define OPENAT_DEBUG_TRACES             0
 
 #endif /* WIFI_CFG_H_ */

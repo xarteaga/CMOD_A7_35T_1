@@ -1,5 +1,6 @@
 # Local Documentation
 fpga/docs
+.*
 
 # infos, Logs and reports
 *.log
