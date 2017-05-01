@@ -2,7 +2,7 @@
 cmake_minimum_required (VERSION 3.5.1)
 
 # Set paths
-set(XILINX_SDK_PATH "/opt/Xilinx/SDK/2015.2/")
+set(XILINX_SDK_PATH "/opt/sw/Xilinx/SDK/2015.2/")
 set(SDK_WORKSPACE_PATH "${CMAKE_SOURCE_DIR}/sdk_workspace")
 set(XILINX_COMPILERS_PATH "${XILINX_SDK_PATH}/gnu/microblaze/lin/bin/")
 set(XILINX_XSDK "${XILINX_SDK_PATH}/bin/xsdk")
@@ -55,6 +55,7 @@ add_subdirectory(src/scheduler)
 add_subdirectory(src/http_client)
 add_subdirectory(src/buffer)
 add_subdirectory(src/sd)
+add_subdirectory(src/xadc)
 
 project (sw_system C )
 
@@ -65,7 +66,7 @@ file(GLOB BSP_HEADERS "${CMAKE_SOURCE_DIR}/sdk_workspace/bsp_0/microblaze_0/incl
 add_executable(sw_system
 		src/main.c
 		${BSP_HEADERS}
-	)
+		)
 
 # Directories
 include_directories(sw_system
@@ -77,6 +78,7 @@ include_directories(sw_system
 		src/http_client
 		src/buffer
 		src/sd
+		src/xadc
 		src
 	)
 
@@ -87,6 +89,7 @@ target_link_libraries(sw_system scheduler)
 target_link_libraries(sw_system http_client)
 target_link_libraries(sw_system buffer)
 target_link_libraries(sw_system sd)
+target_link_libraries(sw_system xadc)
 
 link_directories(sw_system sdk_workspace/bsp_0/microblaze_0/lib)
 
