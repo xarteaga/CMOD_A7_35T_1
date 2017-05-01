@@ -20,6 +20,7 @@ fpga/sw_system/build
 
 # Software IDE
 fpga/sw_system/.idea
+fpga/sw_system/cmake-build-debug
 .idea
 ./CMakeLists.txt
 
