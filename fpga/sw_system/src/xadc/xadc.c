@@ -1,24 +1,42 @@
-//
-// Created by vaxi on 1/05/17.
-//
 
 /* Standard C Includes */
 
 /* BSP & Xilinx Includes */
 #include <scheduler.h>
+#include <xsysmon.h>
 #include "xparameters.h"
 #include "xsysmon.h"
 
 /* Project includes */
 #include "platform.h"
 #include "xadc.h"
+#include "xadc_cfg.h"
 
-static XSysMon xSysMon;
+static XSysMon xSysMon = {0};
+
+#ifdef PLATFORM_XADC_MONITOR_INPUT_PERIOD
+
+void xadc_monitor(u32 elapsed);
+
+static scheduler_entry_t xadc_monitor_entry = {0, PLATFORM_XADC_MONITOR_INPUT_PERIOD, xadc_monitor};
+
+void xadc_monitor(u32 elapsed) {
+    uint16_t v1 = xadc_read_mv(XADC_CHANNEL_0);
+    uint16_t v2 = xadc_read_mv(XADC_CHANNEL_1);
+
+    LOG("ADC 0: %4d mV; ADC 1: %4d mV", (int) v1, (int) v2);
+}
+
+#endif /* PLATFORM_XADC_MONITOR_INPUT_PERIOD */
 
 int xadc_init(void) {
     XSysMon_Config *ConfigPtr;
     int Status;
     XSysMon *SysMonInstPtr = &xSysMon;
+
+    if (xSysMon.IsReady != 0) {
+        return XST_SUCCESS;
+    }
 
     /*
      * Initialize the SysMon driver.
@@ -60,7 +78,11 @@ int xadc_init(void) {
      */
     XSysMon_SetSequencerMode(SysMonInstPtr, XSM_SEQ_MODE_CONTINPASS);
 
-    PRINT_INIT_OK;
+#ifdef PLATFORM_XADC_MONITOR_INPUT_PERIOD
+    scheduler_add_entry(&xadc_monitor_entry);
+#endif /* PLATFORM_XADC_MONITOR_INPUT_PERIOD */
+
+    LOG("OK", "");
     return XST_SUCCESS;
 }
 
@@ -88,4 +110,8 @@ u16 xadc_read_raw(xadc_channel_t channel) {
            XSM_SR_BUSY_MASK);
 
     return XSysMon_GetAdcData(&xSysMon, _channel);
+}
+
+uint16_t xadc_read_mv(xadc_channel_t channel) {
+    return (3300 * xadc_read_raw(channel)) >> 15;
 }

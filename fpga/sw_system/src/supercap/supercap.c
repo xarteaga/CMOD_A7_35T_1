@@ -1,6 +1,3 @@
-//
-// Created by vaxi on 5/2/17.
-//
 
 /* Standard C Includes */
 #include <stdio.h>
@@ -38,7 +35,7 @@ void supercap_monitor(uint32_t elapsed) {
 
 int supercap_init(void) {
 
-    int ret ;
+    int ret;
 
     ret = xadc_init();
     if (ret != XST_SUCCESS) {
@@ -62,7 +59,7 @@ int supercap_init(void) {
 
 static void supercap_update(uint32_t elapsed) {
     supercap_measure = xadc_read_mv(PLATFORM_SUPERCAP_INPUT);
-    supercap_charge = supercap_measure * (int16_t)PLATFORM_SUPERCAP_VOLTAGE_SCALE;
+    supercap_charge = supercap_measure * (int16_t) PLATFORM_SUPERCAP_VOLTAGE_SCALE;
     supercap_percent = (uint8_t) ((100 * supercap_charge) / PLATFORM_SUPERCAP_VOLTAGE_MAX);
 
     if (supercap_percent > PLATFORM_SUPERCAP_THREASHOLD_GREEN) {

@@ -3,7 +3,7 @@
 #define SW_SYSTEM_XADC_H
 
 
-#include "xbasic_types.h"
+#include "xil_types.h"
 
 typedef enum {
     XADC_CHANNEL_0,
@@ -11,6 +11,7 @@ typedef enum {
 } xadc_channel_t;
 
 int xadc_init (void);
-u16 xadc_read_raw(xadc_channel_t channel);
+uint16_t xadc_read_raw(xadc_channel_t channel);
+uint16_t xadc_read_mv(xadc_channel_t channel);
 
 #endif //SW_SYSTEM_XADC_H

@@ -49,9 +49,12 @@ set(CMAKE_C_COMPILER_WORKS 1)
 set(CMAKE_CXX_COMPILER_WORKS 1)
 
 # Add subdirectories
+add_subdirectory(src/buttons)
 add_subdirectory(src/platform)
+add_subdirectory(src/leds)
 add_subdirectory(src/wifi_esp8266)
 add_subdirectory(src/scheduler)
+add_subdirectory(src/supercap)
 add_subdirectory(src/http_client)
 add_subdirectory(src/buffer)
 add_subdirectory(src/sd)
@@ -65,30 +68,36 @@ file(GLOB BSP_HEADERS "${CMAKE_SOURCE_DIR}/sdk_workspace/bsp_0/microblaze_0/incl
 # Add sources
 add_executable(sw_system
 		src/main.c
-		${BSP_HEADERS}
-		)
+		src/config/xadc_cfg.h
+		${BSP_HEADERS} src/config/supercap_cfg.h src/supercap/supercap.c src/supercap/supercap.h src/config/leds_config.h src/buttons/buttons.c src/buttons/buttons.h)
 
 # Directories
 include_directories(sw_system
 		sdk_workspace/bsp_0/microblaze_0/include
+        src/buffer
+        src/buttons
 		src/config
+        src/http_client
+        src/leds
 		src/platform
-		src/wifi_esp8266
 		src/scheduler
-		src/http_client
-		src/buffer
+		src/supercap
 		src/sd
-		src/xadc
+        src/wifi_esp8266
+        src/xadc
 		src
 	)
 
 # Add libraries
-target_link_libraries(sw_system sw_platform)
-target_link_libraries(sw_system wifi_esp8266)
-target_link_libraries(sw_system scheduler)
-target_link_libraries(sw_system http_client)
 target_link_libraries(sw_system buffer)
+target_link_libraries(sw_system buttons)
+target_link_libraries(sw_system leds)
+target_link_libraries(sw_system platform)
+target_link_libraries(sw_system scheduler)
+target_link_libraries(sw_system supercap)
+target_link_libraries(sw_system http_client)
 target_link_libraries(sw_system sd)
+target_link_libraries(sw_system wifi_esp8266)
 target_link_libraries(sw_system xadc)
 
 link_directories(sw_system sdk_workspace/bsp_0/microblaze_0/lib)
