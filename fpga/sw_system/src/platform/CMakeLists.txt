@@ -1,15 +1,16 @@
 # Check version
-cmake_minimum_required (VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.5.1)
 
 # Create Project
-project (sw_platform C )
+project(platform C)
 
 # Add sources
-add_library(sw_platform
-			platform.c
-		platform.h)
+add_library(platform
+        platform.c
+        platform.h)
 
 # Include Directories
-include_directories(sw_platform ../../sdk_workspace/bsp_0/microblaze_0/include)
-include_directories(sw_platform ../wifi_esp8266)
-include_directories(sw_platform ../scheduler)
+include_directories(platform ../../sdk_workspace/bsp_0/microblaze_0/include)
+include_directories(platform ../wifi_esp8266)
+include_directories(platform ../scheduler)
+include_directories(platform ../xadc)

@@ -1,11 +1,13 @@
 
 /* Standard C includes */
+#include <stdio.h>
+#include <stdarg.h>
 
 /* BSP & Xilinx Includes */
+#include "xparameters.h"
 #include "xintc.h"
 #include "xuartlite.h"
 #include "xspi.h"
-#include "xparameters.h"
 
 /* Project includes */
 #include "platform.h"
