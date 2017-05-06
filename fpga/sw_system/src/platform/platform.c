@@ -2,6 +2,7 @@
 /* Standard C includes */
 #include <stdio.h>
 #include <stdarg.h>
+#include <scheduler.h>
 
 /* BSP & Xilinx Includes */
 #include "xparameters.h"
@@ -17,6 +18,31 @@ XIntc platform_intc;
 
 extern XUartLite wifi_uart;
 extern XSpi sd_spi;
+
+typedef enum {
+    PLATFORM_SLEEP_STATE_UNDEFINED = 0,
+    PLATFORM_SLEEP_STATE_RUNNING = 1,
+    PLATFORM_SLEEP_STATE_FINISHED = 2
+} platform_sleep_state_t;
+
+static platform_sleep_state_t platform_sleep_state = PLATFORM_SLEEP_STATE_UNDEFINED;
+
+static void platform_sleep_task (uint32_t elapsed);
+static scheduler_entry_t platform_sleep_entry = {0, 0, platform_sleep_task};
+
+static void platform_sleep_task (uint32_t elapsed) {
+    platform_sleep_state = PLATFORM_SLEEP_STATE_FINISHED;
+    platform_sleep_entry.period = 0;
+    //LOG_OK();
+}
+
+void sleep (float seconds) {
+    uint32_t t = (uint32_t) (seconds*1000.0);
+    platform_sleep_state = PLATFORM_SLEEP_STATE_RUNNING;
+    platform_sleep_entry.period = t;
+    //LOG("Sleeping %d milliseconds", t);
+    //while(platform_sleep_state != PLATFORM_SLEEP_STATE_FINISHED);
+}
 
 void platform_enable_interrupts(void) {
     XIntc *intcp;
@@ -59,5 +85,5 @@ void platform_enable_interrupts(void) {
 }
 
 void init_platform(void) {
-    /* Do nothing */
+    scheduler_add_entry(&platform_sleep_entry);
 }
