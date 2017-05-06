@@ -13,15 +13,15 @@
 /* Variables */
 extern XIntc platform_intc;
 static uint32_t timestamp = 0;
-static scheduler_entry_t *scheduler_entries [SCHEDULER_MAX_ENTRIES];
+static scheduler_entry_t *scheduler_entries[SCHEDULER_MAX_ENTRIES];
 static uint32_t scheduler_entries_count;
 static uint8_t scheduler_busy = TRUE;
 
-void scheduler_interrupt_handler(void){
+void scheduler_interrupt_handler(void) {
     uint32_t i = 0, elapsed = 0;
 
     /* Check if it is busy */
-    if (scheduler_busy == FALSE) {
+    if (/*scheduler_busy == FALSE*/ TRUE) {
         /* Rise Busy */
         scheduler_busy = TRUE;
 
@@ -31,10 +31,13 @@ void scheduler_interrupt_handler(void){
             scheduler_entry_t *entry = scheduler_entries[i];
 
             /* Process */
-            elapsed = (u32)(timestamp - entry->timestamp);
-            if (elapsed >= entry->period) {
+            elapsed = (u32) (timestamp - entry->timestamp);
+            if (entry->period == 0) {
+                /* Update timestamp for disabled entries */
+                entry->timestamp = timestamp;
+            } else if (entry->period > 0 && elapsed >= entry->period) {
                 /* Call callback if required */
-                ((scheduler_callback)entry->callback)((u32)elapsed);
+                ((scheduler_callback) entry->callback)((u32) elapsed);
 
                 /* Update timestamp */
                 entry->timestamp = timestamp;
@@ -49,7 +52,7 @@ void scheduler_interrupt_handler(void){
     timestamp++;
 }
 
-void scheduler_init(void){
+void scheduler_init(void) {
     /* Set all entries to zero */
     memset(scheduler_entries, 0, sizeof(scheduler_entries));
 

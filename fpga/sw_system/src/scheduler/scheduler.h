@@ -5,7 +5,7 @@
 #include "xil_types.h"
 
 /* Configuration parameters */
-#define SCHEDULER_MAX_ENTRIES 16
+#define SCHEDULER_MAX_ENTRIES 32
 
 /* Datatypes */
 typedef void (*scheduler_callback) (u32 elapsed);
