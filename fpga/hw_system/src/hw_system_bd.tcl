@@ -229,6 +229,7 @@ proc create_root_design { parentCell } {
     set rgb_led [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 rgb_led ]
     set uart_usb [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:uart_rtl:1.0 uart_usb ]
     set uart_wifi [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:uart_rtl:1.0 uart_wifi ]
+    set uart_lcd [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:uart_rtl:1.0 uart_lcd ]
     set spi_sd [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:spi_rtl:1.0 spi_sd ]
     set gpio_sd_cs [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 gpio_sd_cs ]
     set gpio_wifi_en [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 gpio_wifi_en ]
@@ -371,7 +372,7 @@ proc create_root_design { parentCell } {
     # Create instance: microblaze_0_axi_periph, and set properties
     set microblaze_0_axi_periph [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 microblaze_0_axi_periph ]
     set_property -dict [ list \
-        CONFIG.NUM_MI {11} \
+        CONFIG.NUM_MI {12} \
     ] $microblaze_0_axi_periph
     
     # Create instance: microblaze_0_local_memory
@@ -407,7 +408,7 @@ proc create_root_design { parentCell } {
     # Create instance: xlconcat_0, and set properties
     set xlconcat_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0 ]
     set_property -dict [ list \
-    CONFIG.NUM_PORTS {6} \
+    CONFIG.NUM_PORTS {7} \
     ] $xlconcat_0
     
     # Create instance: axi_gpio_inouts, and set properties
@@ -422,6 +423,14 @@ proc create_root_design { parentCell } {
         CONFIG.ALL_OUTPUTS {0} \
     ] $axi_gpio_inouts
     
+    # Create instance: axi_uart_lcd, and set properties
+    set axi_uart_lcd [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_uartlite:2.0 axi_uart_lcd ]
+    set_property -dict [ list \
+        CONFIG.C_BAUDRATE {9600} \
+        CONFIG.UARTLITE_BOARD_INTERFACE {Custom} \
+        CONFIG.USE_BOARD_FLOW {true}\
+    ] $axi_uart_lcd
+    
     # Create interface connections
     connect_bd_intf_net -intf_net axi_emc_0_EMC_INTF [get_bd_intf_ports cellular_ram] [get_bd_intf_pins axi_emc_0/EMC_INTF]
     connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports led_2bits] [get_bd_intf_pins axi_gpio_0/GPIO]
@@ -431,6 +440,7 @@ proc create_root_design { parentCell } {
     connect_bd_intf_net -intf_net axi_mem_intercon_M00_AXI [get_bd_intf_pins axi_emc_0/S_AXI_MEM] [get_bd_intf_pins axi_mem_intercon/M00_AXI]
     connect_bd_intf_net -intf_net axi_uart_usb_UART [get_bd_intf_ports uart_usb] [get_bd_intf_pins axi_uart_usb/UART]
     connect_bd_intf_net -intf_net axi_uart_wifi_UART [get_bd_intf_ports uart_wifi] [get_bd_intf_pins axi_uart_wifi/UART]
+    connect_bd_intf_net -intf_net axi_uart_lcd_UART [get_bd_intf_ports uart_lcd] [get_bd_intf_pins axi_uart_lcd/UART]
     connect_bd_intf_net -intf_net axi_spi_sd_SPI [get_bd_intf_ports spi_sd] [get_bd_intf_pins axi_spi_sd/SPI_0]
     connect_bd_intf_net -intf_net axi_gpio_sd_cs_CS [get_bd_intf_ports gpio_sd_cs] [get_bd_intf_pins axi_gpio_sd_cs/GPIO]
     connect_bd_intf_net -intf_net axi_gpio_wifi_en_EN [get_bd_intf_ports gpio_wifi_en] [get_bd_intf_pins axi_gpio_wifi_en/GPIO]
@@ -448,6 +458,7 @@ proc create_root_design { parentCell } {
     connect_bd_intf_net -intf_net microblaze_0_axi_periph_M08_AXI [get_bd_intf_pins axi_gpio_wifi_en/S_AXI] [get_bd_intf_pins microblaze_0_axi_periph/M08_AXI]
     connect_bd_intf_net -intf_net microblaze_0_axi_periph_M09_AXI [get_bd_intf_pins xadc_wiz_0/s_axi_lite] [get_bd_intf_pins microblaze_0_axi_periph/M09_AXI]
     connect_bd_intf_net -intf_net microblaze_0_axi_periph_M10_AXI [get_bd_intf_pins axi_gpio_inouts/S_AXI] [get_bd_intf_pins microblaze_0_axi_periph/M10_AXI]
+    connect_bd_intf_net -intf_net microblaze_0_axi_periph_M11_AXI [get_bd_intf_pins axi_uart_lcd/S_AXI] [get_bd_intf_pins microblaze_0_axi_periph/M11_AXI]
     connect_bd_intf_net -intf_net microblaze_0_debug [get_bd_intf_pins mdm_1/MBDEBUG_0] [get_bd_intf_pins microblaze_0/DEBUG]
     connect_bd_intf_net -intf_net microblaze_0_dlmb_1 [get_bd_intf_pins microblaze_0/DLMB] [get_bd_intf_pins microblaze_0_local_memory/DLMB]
     connect_bd_intf_net -intf_net microblaze_0_ilmb_1 [get_bd_intf_pins microblaze_0/ILMB] [get_bd_intf_pins microblaze_0_local_memory/ILMB]
@@ -459,6 +470,7 @@ proc create_root_design { parentCell } {
     connect_bd_net -net fit_timer_0_interrupt [get_bd_pins fit_timer_0/interrupt] [get_bd_pins xlconcat_0/In3]
     connect_bd_net -net axi_spi_sd_interrupt [get_bd_pins axi_spi_sd/ip2intc_irpt] [get_bd_pins xlconcat_0/In4]
     connect_bd_net -net axi_gpio_inouts_ip2intc_irpt [get_bd_pins axi_gpio_inouts/ip2intc_irpt] [get_bd_pins xlconcat_0/In5]
+    connect_bd_net -net axi_uart_lcd_ip2intc_irpt [get_bd_pins axi_uart_lcd/interrupt] [get_bd_pins xlconcat_0/In6]
     connect_bd_net -net clk_wiz_0_locked [get_bd_pins clk_wiz_0/locked] [get_bd_pins rst_clk_wiz_0_100M/dcm_locked]
     connect_bd_net -net mdm_1_debug_sys_rst [get_bd_pins mdm_1/Debug_SYS_Rst] [get_bd_pins rst_clk_wiz_0_100M/mb_debug_sys_rst]
     connect_bd_net -net microblaze_0_Clk \
@@ -479,6 +491,7 @@ proc create_root_design { parentCell } {
         [get_bd_pins axi_gpio_sd_cs/s_axi_aclk] \
         [get_bd_pins axi_gpio_wifi_en/s_axi_aclk] \
         [get_bd_pins axi_gpio_inouts/s_axi_aclk] \
+        [get_bd_pins axi_uart_lcd/s_axi_aclk] \
         [get_bd_pins clk_wiz_0/clk_out1] \
         [get_bd_pins microblaze_0/Clk] \
         [get_bd_pins microblaze_0_axi_periph/ACLK] \
@@ -493,6 +506,7 @@ proc create_root_design { parentCell } {
         [get_bd_pins microblaze_0_axi_periph/M08_ACLK] \
         [get_bd_pins microblaze_0_axi_periph/M09_ACLK] \
         [get_bd_pins microblaze_0_axi_periph/M10_ACLK] \
+        [get_bd_pins microblaze_0_axi_periph/M11_ACLK] \
         [get_bd_pins microblaze_0_axi_periph/S00_ACLK] \
         [get_bd_pins microblaze_0_local_memory/LMB_Clk] \
         [get_bd_pins rst_clk_wiz_0_100M/slowest_sync_clk] \
@@ -523,6 +537,7 @@ proc create_root_design { parentCell } {
         [get_bd_pins axi_gpio_sd_cs/s_axi_aresetn] \
         [get_bd_pins axi_gpio_wifi_en/s_axi_aresetn] \
         [get_bd_pins axi_gpio_inouts/s_axi_aresetn] \
+        [get_bd_pins axi_uart_lcd/s_axi_aresetn] \
         [get_bd_pins microblaze_0_axi_periph/M00_ARESETN] \
         [get_bd_pins microblaze_0_axi_periph/M01_ARESETN] \
         [get_bd_pins microblaze_0_axi_periph/M02_ARESETN] \
@@ -534,6 +549,7 @@ proc create_root_design { parentCell } {
         [get_bd_pins microblaze_0_axi_periph/M08_ARESETN] \
         [get_bd_pins microblaze_0_axi_periph/M09_ARESETN] \
         [get_bd_pins microblaze_0_axi_periph/M10_ARESETN] \
+        [get_bd_pins microblaze_0_axi_periph/M11_ARESETN] \
         [get_bd_pins microblaze_0_axi_periph/S00_ARESETN] \
         [get_bd_pins xadc_wiz_0/s_axi_aresetn] \
         [get_bd_pins rst_clk_wiz_0_100M/peripheral_aresetn]
@@ -551,6 +567,7 @@ proc create_root_design { parentCell } {
     create_bd_addr_seg -range 0x10000 -offset 0x40020000 [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_gpio_sd_cs/S_AXI/Reg] SEG_axi_gpio_sd_cs_Reg
     create_bd_addr_seg -range 0x10000 -offset 0x40030000 [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_gpio_wifi_en/S_AXI/Reg] SEG_axi_gpio_wifi_en_Reg
     create_bd_addr_seg -range 0x10000 -offset 0x40040000 [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_gpio_inouts/S_AXI/Reg] SEG_axi_gpio_inouts_Reg
+    create_bd_addr_seg -range 0x10000 -offset 0x40050000 [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_uart_lcd/S_AXI/Reg] SEG_axi_uart_lcd_Reg
     create_bd_addr_seg -range 0x10000 -offset 0x41200000 [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_intc_0/s_axi/Reg] SEG_axi_intc_0_Reg
     create_bd_addr_seg -range 0x10000 -offset 0x41C00000 [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_timer_0/S_AXI/Reg] SEG_axi_timer_0_Reg
     create_bd_addr_seg -range 0x10000 -offset 0x40600000 [get_bd_addr_spaces microblaze_0/Data] [get_bd_addr_segs axi_uart_usb/S_AXI/Reg] SEG_axi_uart_usb_Reg
