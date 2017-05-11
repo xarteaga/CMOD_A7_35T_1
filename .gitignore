@@ -57,3 +57,6 @@ fpga/sw_system/cmake-build-debug
 # Debug files
 *.dSYM/
 *.su
+
+# Compressed Files
+*.zip
