@@ -1,0 +1,22 @@
+
+#ifndef SW_SYSTEM_RTC_CFG_H
+#define SW_SYSTEM_RTC_CFG_H
+
+#include <dinouts.h>
+
+#define PLATFORM_RTC_UPDATE_PERIOD      1000
+#define PLATFORM_RTC_MONITOR_PERIOD     1000
+#define PLATFORM_RTC_DS1302_CLK         DINOUTS_PIN_9
+#define PLATFORM_RTC_DS1302_DATA        DINOUTS_PIN_8
+#define PLATFORM_RTC_DS1302_CE          DINOUTS_PIN_7
+#define PLATFORM_RTC_SET_TEST_TIME      0
+#define PLATFORM_RTC_SET_NOW            1
+#define PLATFORM_RTC_NOW_SECONDS        0
+#define PLATFORM_RTC_NOW_MINUTES        8
+#define PLATFORM_RTC_NOW_HOURS          11
+#define PLATFORM_RTC_NOW_DAY            7
+#define PLATFORM_RTC_NOW_MONTH          5
+#define PLATFORM_RTC_NOW_YEAR           17
+
+
+#endif //SW_SYSTEM_RTC_CFG_H

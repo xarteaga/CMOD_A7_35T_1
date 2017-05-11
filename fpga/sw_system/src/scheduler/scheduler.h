@@ -16,6 +16,8 @@ typedef struct {
     void* callback;
 } scheduler_entry_t;
 
+void sleep (float seconds);
+
 void scheduler_interrupt_handler(void);
 void scheduler_add_entry(scheduler_entry_t *entry);
 void scheduler_init(void);

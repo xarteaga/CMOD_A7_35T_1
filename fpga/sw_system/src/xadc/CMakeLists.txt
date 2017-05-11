@@ -11,6 +11,7 @@ add_library(xadc
 
 # Include Directories
 include_directories(xadc ../../sdk_workspace/bsp_0/microblaze_0/include)
-include_directories(xadc ../scheduler)
 include_directories(xadc ../config)
+include_directories(xadc ../dinouts)
+include_directories(xadc ../scheduler)
 include_directories(xadc ../platform)

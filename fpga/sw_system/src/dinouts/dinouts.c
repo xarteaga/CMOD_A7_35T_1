@@ -6,6 +6,7 @@
 /* BSP & Xilinx Includes */
 #include <xparameters.h>
 #include <xgpio.h>
+#include <xenv.h>
 
 /* Project includes */
 #include <platform.h>
@@ -69,6 +70,13 @@ void dinouts_set_direction (dinouts_pin_t chan, dinouts_direction_t direction) {
     }
 }
 
+void dinouts_write (dinouts_pin_t chan, uint8_t value) {
+    if (chan < DINOUTS_PIN_UNKNOWN) {
+        dinouts_write_mask = (dinouts_write_mask & (~(1 << chan))) | ((value & TRUE) << chan);
+        XGpio_DiscreteWrite(&xGpioInOuts, 1, dinouts_write_mask);
+    }
+}
+
 void dinouts_turn_on (dinouts_pin_t chan) {
     if (chan < DINOUTS_PIN_UNKNOWN) {
         dinouts_write_mask = dinouts_write_mask | (1<<chan);
@@ -89,4 +97,18 @@ dinouts_level_t dinouts_read (dinouts_pin_t chan) {
         return (dinouts_level_t)(read_mask >> chan) & 0x01;
     }
     return DINOUTS_UNDEFINED;
+}
+
+void dinouts_shift_out (dinouts_pin_t dataPin, dinouts_pin_t clockPin, uint8_t lsbfirst, uint8_t val) {
+    uint8_t i;
+
+    for (i = 0; i < 8; i++)  {
+        if (lsbfirst == TRUE)
+            dinouts_write(dataPin, !!(val & (1 << i)));
+        else
+            dinouts_write(dataPin, !!(val & (1 << (7 - i))));
+
+        dinouts_write(clockPin, TRUE);
+        dinouts_write(clockPin, FALSE);
+    }
 }

@@ -1,0 +1,7 @@
+
+#ifndef SW_SYSTEM_HAPPYPILLS_CONTROLLER_H
+#define SW_SYSTEM_HAPPYPILLS_CONTROLLER_H
+
+void happypills_controller_init(void);
+
+#endif //SW_SYSTEM_HAPPYPILLS_CONTROLLER_H

@@ -1,16 +1,32 @@
 
 /* Standard C Includes */
+#include <inttypes.h>
 
 /* BSP & Xilinx Includes */
 #include <scheduler.h>
 #include <xsysmon.h>
 #include "xparameters.h"
-#include "xsysmon.h"
 
 /* Project includes */
-#include "platform.h"
+#include <platform.h>
+#include <dinouts.h>
 #include "xadc.h"
 #include "xadc_cfg.h"
+
+typedef struct {
+    uint8_t channel;
+    dinouts_pin_t selector_pin;
+} xadc_descr_t;
+
+#define XADC_HW_CHANNEL_04 (XSM_CH_AUX_MIN + 0x04)
+#define XADC_HW_CHANNEL_12 (XSM_CH_AUX_MIN + 0x0C)
+
+static xadc_descr_t xadc_descr [XADC_CHANNEL_UNDEFINED] = {
+        {XADC_HW_CHANNEL_04, PLATFORM_XADC_ANALOG_SWITCH_0},
+        {XADC_HW_CHANNEL_12, PLATFORM_XADC_ANALOG_SWITCH_1},
+        {XADC_HW_CHANNEL_12, PLATFORM_XADC_ANALOG_SWITCH_2},
+        {XADC_HW_CHANNEL_12, PLATFORM_XADC_ANALOG_SWITCH_3}
+};
 
 static XSysMon xSysMon = {0};
 
@@ -86,30 +102,39 @@ int xadc_init(void) {
     return XST_SUCCESS;
 }
 
-#define XADC_HW_CHANNEL_04 (XSM_CH_AUX_MIN + 0x04)
-#define XADC_HW_CHANNEL_12 (XSM_CH_AUX_MIN + 0x0C)
-
-
 u16 xadc_read_raw(xadc_channel_t channel) {
-    u8 _channel;
-    //XSysMon_StartAdcConversion(&xSysMon);
+    int i;
+    xadc_descr_t xadc;
+    uint16_t val = 0xFFFF;
 
-    switch (channel) {
-        case XADC_CHANNEL_0:
-            _channel = XADC_HW_CHANNEL_04;
-            break;
-        case XADC_CHANNEL_1:
-            _channel = XADC_HW_CHANNEL_12;
-            break;
-        default:
-            return 0xffff;
+    if (channel >= XADC_CHANNEL_UNDEFINED) {
+        return val;
     }
+
+    xadc = xadc_descr[channel];
+
+    /*for (i = 0; i < XADC_CHANNEL_UNDEFINED; i++) {
+        if (xadc_descr[i].selector_pin != DINOUTS_UNDEFINED) {
+            if ( i == channel) {
+                dinouts_turn_on(xadc_descr[i].selector_pin);
+            } else {
+                dinouts_turn_off(xadc_descr[i].selector_pin);
+            }
+        }
+    }
+    sleep(0.01);*/
 
     XSysMon_GetStatus(&xSysMon); /* Clear the old status */
     while ((XSysMon_GetStatus(&xSysMon) & XSM_SR_BUSY_MASK) ==
            XSM_SR_BUSY_MASK);
 
-    return XSysMon_GetAdcData(&xSysMon, _channel);
+    val = XSysMon_GetAdcData(&xSysMon, xadc.channel);
+
+    /*if (xadc.selector_pin != DINOUTS_UNDEFINED) {
+        dinouts_turn_off(xadc.selector_pin);
+    }*/
+
+    return val;
 }
 
 uint16_t xadc_read_mv(xadc_channel_t channel) {

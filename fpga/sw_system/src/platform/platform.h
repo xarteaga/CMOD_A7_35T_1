@@ -10,6 +10,4 @@
 void init_platform(void);
 void platform_enable_interrupts(void);
 
-void sleep (float seconds);
-
 #endif //SW_SYSTEM_PLATFORM_H_H

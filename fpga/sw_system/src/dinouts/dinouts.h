@@ -41,5 +41,6 @@ void dinouts_set_direction (dinouts_pin_t chan, dinouts_direction_t direction);
 void dinouts_turn_on (dinouts_pin_t chan);
 void dinouts_turn_off (dinouts_pin_t chan);
 dinouts_level_t dinouts_read (dinouts_pin_t chan);
+void dinouts_shift_out (dinouts_pin_t dataPin, dinouts_pin_t clockPin, uint8_t lsbfirst, uint8_t val);
 
 #endif //SW_SYSTEM_DINOUTS_H

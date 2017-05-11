@@ -13,5 +13,6 @@ add_library(supercap
 include_directories(supercap ../../sdk_workspace/bsp_0/microblaze_0/include)
 include_directories(supercap ../scheduler)
 include_directories(supercap ../config)
+include_directories(supercap ../leds)
 include_directories(supercap ../platform)
 include_directories(supercap ../xadc)

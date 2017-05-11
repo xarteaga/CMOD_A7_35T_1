@@ -11,7 +11,7 @@
 #include <xadc.h>
 #include "supercap.h"
 #include "supercap_cfg.h"
-#include "../leds/leds.h"
+#include "leds.h"
 
 static void supercap_update(uint32_t elapsed);
 

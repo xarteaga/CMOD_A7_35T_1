@@ -17,32 +17,8 @@
 XIntc platform_intc;
 
 extern XUartLite wifi_uart;
+extern XUartLite lcd_uart;
 extern XSpi sd_spi;
-
-typedef enum {
-    PLATFORM_SLEEP_STATE_UNDEFINED = 0,
-    PLATFORM_SLEEP_STATE_RUNNING = 1,
-    PLATFORM_SLEEP_STATE_FINISHED = 2
-} platform_sleep_state_t;
-
-static platform_sleep_state_t platform_sleep_state = PLATFORM_SLEEP_STATE_UNDEFINED;
-
-static void platform_sleep_task (uint32_t elapsed);
-static scheduler_entry_t platform_sleep_entry = {0, 0, platform_sleep_task};
-
-static void platform_sleep_task (uint32_t elapsed) {
-    platform_sleep_state = PLATFORM_SLEEP_STATE_FINISHED;
-    platform_sleep_entry.period = 0;
-    //LOG_OK();
-}
-
-void sleep (float seconds) {
-    uint32_t t = (uint32_t) (seconds*1000.0);
-    platform_sleep_state = PLATFORM_SLEEP_STATE_RUNNING;
-    platform_sleep_entry.period = t;
-    //LOG("Sleeping %d milliseconds", t);
-    //while(platform_sleep_state != PLATFORM_SLEEP_STATE_FINISHED);
-}
 
 void platform_enable_interrupts(void) {
     XIntc *intcp;
@@ -54,6 +30,11 @@ void platform_enable_interrupts(void) {
     XIntc_Connect(intcp, XPAR_INTC_0_UARTLITE_1_VEC_ID,
                   (XInterruptHandler) XUartLite_InterruptHandler,
                   (void *) &wifi_uart);
+
+    /* Connect LCD Module interrupt handler */
+    XIntc_Connect(intcp, XPAR_INTC_0_UARTLITE_2_VEC_ID,
+                  (XInterruptHandler) XUartLite_InterruptHandler,
+                  (void *) &lcd_uart);
 
     /* Connect SD Module Interrupt handler */
     XIntc_Connect(intcp, XPAR_INTC_0_SPI_0_VEC_ID,
@@ -77,6 +58,7 @@ void platform_enable_interrupts(void) {
 
     /* Enable the desired interruptions */
     XIntc_Enable(intcp, XPAR_INTC_0_UARTLITE_1_VEC_ID);
+    XIntc_Enable(intcp, XPAR_INTC_0_UARTLITE_2_VEC_ID);
     XIntc_Enable(intcp, XPAR_INTC_0_SPI_0_VEC_ID);
     XIntc_Enable(intcp, XPAR_AXI_INTC_0_FIT_TIMER_0_INTERRUPT_INTR);
 
@@ -85,5 +67,5 @@ void platform_enable_interrupts(void) {
 }
 
 void init_platform(void) {
-    scheduler_add_entry(&platform_sleep_entry);
+    /* Do nothing */
 }

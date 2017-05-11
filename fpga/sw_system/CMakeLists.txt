@@ -49,15 +49,21 @@ set(CMAKE_C_COMPILER_WORKS 1)
 set(CMAKE_CXX_COMPILER_WORKS 1)
 
 # Add subdirectories
-add_subdirectory(src/buttons)
-add_subdirectory(src/platform)
-add_subdirectory(src/leds)
-add_subdirectory(src/wifi_esp8266)
-add_subdirectory(src/scheduler)
-add_subdirectory(src/supercap)
-add_subdirectory(src/http_client)
+add_subdirectory(src/actuators)
 add_subdirectory(src/buffer)
+add_subdirectory(src/buttons)
+add_subdirectory(src/dinouts)
+add_subdirectory(src/happypills)
+add_subdirectory(src/http_client)
+add_subdirectory(src/irproximity)
+add_subdirectory(src/lcd)
+add_subdirectory(src/leds)
+add_subdirectory(src/platform)
+add_subdirectory(src/rtc)
+add_subdirectory(src/scheduler)
 add_subdirectory(src/sd)
+add_subdirectory(src/supercap)
+add_subdirectory(src/wifi_esp8266)
 add_subdirectory(src/xadc)
 
 project (sw_system C )
@@ -68,37 +74,60 @@ file(GLOB BSP_HEADERS "${CMAKE_SOURCE_DIR}/sdk_workspace/bsp_0/microblaze_0/incl
 # Add sources
 add_executable(sw_system
 		src/main.c
+		src/config/actuators_cfg.h
+		src/config/dinouts_cfg.h
+		src/config/buttons_cfg.h
+		src/config/irproximity_cfg.h
+		src/config/lcd_cfg.h
+		src/config/leds_cfg.h
+		src/config/rtc_cfg.h
+		src/config/supercap_cfg.h
+		src/config/wifi_cfg.h
 		src/config/xadc_cfg.h
-		${BSP_HEADERS} src/config/supercap_cfg.h src/supercap/supercap.c src/supercap/supercap.h src/config/leds_config.h src/buttons/buttons.c src/buttons/buttons.h)
+		${BSP_HEADERS})
 
 # Directories
 include_directories(sw_system
 		sdk_workspace/bsp_0/microblaze_0/include
+        src/actuators
         src/buffer
         src/buttons
 		src/config
+		src/dinouts
+        src/happypills
         src/http_client
+        src/irproximity
+        src/lcd
         src/leds
 		src/platform
+		src/rtc
 		src/scheduler
-		src/supercap
 		src/sd
+        src/supercap
         src/wifi_esp8266
         src/xadc
 		src
 	)
 
 # Add libraries
-target_link_libraries(sw_system buffer)
-target_link_libraries(sw_system buttons)
-target_link_libraries(sw_system leds)
-target_link_libraries(sw_system platform)
-target_link_libraries(sw_system scheduler)
-target_link_libraries(sw_system supercap)
-target_link_libraries(sw_system http_client)
-target_link_libraries(sw_system sd)
-target_link_libraries(sw_system wifi_esp8266)
-target_link_libraries(sw_system xadc)
+target_link_libraries(sw_system
+        actuators
+        buffer
+        buttons
+        dinouts
+        happypills
+        irproximity
+        lcd
+        leds
+        platform
+        scheduler
+        rtc
+        sd
+        supercap
+        http_client
+        wifi_esp8266
+        xadc
+    )
 
 link_directories(sw_system sdk_workspace/bsp_0/microblaze_0/lib)
 

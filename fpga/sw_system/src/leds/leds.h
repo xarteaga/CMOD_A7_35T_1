@@ -18,5 +18,6 @@ typedef enum {
 int leds_init (void);
 void leds_turn_on (leds_chan_t chan);
 void leds_turn_off (leds_chan_t chan);
+void leds_turn_on_timeout(leds_chan_t chan, uint16_t millis);
 
 #endif //SW_SYSTEM_LEDS_H
