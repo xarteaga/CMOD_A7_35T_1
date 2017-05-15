@@ -61,6 +61,8 @@ void rtc_ds1302_init(void) {
     dinouts_init();
 
     dinouts_turn_off(PLATFORM_RTC_DS1302_CE);
+    dinouts_turn_on(PLATFORM_RTC_DS1302_VCC);
+    dinouts_turn_off(PLATFORM_RTC_DS1302_GND);
 
 }
 
@@ -98,11 +100,11 @@ void rtc_ds1302_clk_read(rtc_data_t *data) {
     rtc_ds1302_read(RTC_DS1302_CLK_READ, data, sizeof(rtc_data_t));
 }
 
-void rtc_ds1302_ram_write(rtc_data_t *data, uint8_t count) {
-    rtc_ds1302_write(RTC_DS1302_RAM_WRITE, data, count*sizeof(rtc_data_t));
+void rtc_ds1302_ram_write(uint8_t *data, uint8_t count) {
+    rtc_ds1302_write(RTC_DS1302_RAM_WRITE, data, count);
 }
 
-void rtc_ds1302_ram_read(rtc_data_t *data, uint8_t count) {
-    rtc_ds1302_read(RTC_DS1302_RAM_READ, data, count*sizeof(rtc_data_t));
+void rtc_ds1302_ram_read(uint8_t *data, uint8_t count) {
+    rtc_ds1302_read(RTC_DS1302_RAM_READ, data, count);
 }
 

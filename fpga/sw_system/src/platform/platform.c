@@ -16,9 +16,9 @@
 
 XIntc platform_intc;
 
-extern XUartLite wifi_uart;
+//extern XUartLite wifi_uart;
 extern XUartLite lcd_uart;
-extern XSpi sd_spi;
+//extern XSpi sd_spi;
 
 void platform_enable_interrupts(void) {
     XIntc *intcp;
@@ -27,9 +27,9 @@ void platform_enable_interrupts(void) {
     XIntc_Initialize(intcp, XPAR_INTC_0_DEVICE_ID);
 
     /* Connect WiFi Module interrupt handler */
-    XIntc_Connect(intcp, XPAR_INTC_0_UARTLITE_1_VEC_ID,
+    /*XIntc_Connect(intcp, XPAR_INTC_0_UARTLITE_1_VEC_ID,
                   (XInterruptHandler) XUartLite_InterruptHandler,
-                  (void *) &wifi_uart);
+                  (void *) &wifi_uart);*/
 
     /* Connect LCD Module interrupt handler */
     XIntc_Connect(intcp, XPAR_INTC_0_UARTLITE_2_VEC_ID,
@@ -37,9 +37,9 @@ void platform_enable_interrupts(void) {
                   (void *) &lcd_uart);
 
     /* Connect SD Module Interrupt handler */
-    XIntc_Connect(intcp, XPAR_INTC_0_SPI_0_VEC_ID,
+    /*XIntc_Connect(intcp, XPAR_INTC_0_SPI_0_VEC_ID,
                   (XInterruptHandler) XSpi_InterruptHandler,
-                  (void *) &sd_spi);
+                  (void *) &sd_spi);*/
 
     /* Connect Fixed Interval Timer interrupt to the scheduler */
     XIntc_Connect(&platform_intc, XPAR_AXI_INTC_0_FIT_TIMER_0_INTERRUPT_INTR,
@@ -63,7 +63,7 @@ void platform_enable_interrupts(void) {
     XIntc_Enable(intcp, XPAR_AXI_INTC_0_FIT_TIMER_0_INTERRUPT_INTR);
 
     /* Print debug trace */
-    xil_printf("%32s ... OK\r\n", __func__);
+    LOG("%32s ... OK\r\n", __func__);
 }
 
 void init_platform(void) {

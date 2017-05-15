@@ -87,7 +87,12 @@ static void irproximity_cont_task(uint32_t elapsed) {
     }
     irproximity_monitor_average_env = (uint16_t) (temp_average_env / PLATFORM_IRPROXIMITY_AVERAGING);
 
-    irproximity_monitor_diff = (int16_t)irproximity_monitor_average_env - (int16_t)irproximity_monitor_average;
+    if (irproximity_monitor_average_env > irproximity_monitor_average) {
+        irproximity_monitor_diff = (int16_t) irproximity_monitor_average_env - (int16_t) irproximity_monitor_average;
+    } else {
+        irproximity_monitor_diff = (int16_t) irproximity_monitor_average - (int16_t) irproximity_monitor_average_env;
+    }
+
 
     irproximity_monitor_index = (uint8_t) ((irproximity_monitor_index + 1) % PLATFORM_IRPROXIMITY_AVERAGING);
 }

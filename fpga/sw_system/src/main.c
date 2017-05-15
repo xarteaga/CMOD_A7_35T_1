@@ -6,7 +6,6 @@
 
 /* Project includes */
 #include "platform.h"
-#include "wifi_esp8266.h"
 #include "scheduler.h"
 //#include "http_client.h"
 //#include "sd_spi.h"
@@ -22,7 +21,7 @@
 #include <lcd.h>
 
 int main(void) {
-    xil_printf("\r\n--- CMOD_A7_35T_1 Running %s %s ---\r\n\r\n", __DATE__, __TIME__);
+    LOG("\r\n--- CMOD_A7_35T_1 Running %s %s ---\r\n\r\n", __DATE__, __TIME__);
 
     /* Init platform */
     scheduler_init();

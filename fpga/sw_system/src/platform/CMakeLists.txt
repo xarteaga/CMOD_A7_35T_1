@@ -11,6 +11,7 @@ add_library(platform
 
 # Include Directories
 include_directories(platform ../../sdk_workspace/bsp_0/microblaze_0/include)
-include_directories(platform ../wifi_esp8266)
+include_directories(platform ../config)
+#include_directories(platform ../wifi_esp8266)
 include_directories(platform ../scheduler)
 include_directories(platform ../xadc)

@@ -13,13 +13,6 @@ typedef enum {
     LCD_CURSOR_UNDEFINED = 6
 } lcd_cursor_t;
 
-typedef enum {
-    LCD_MODE_STANDBY = 0,
-    LCD_MODE_SELECT = 1,
-    LCD_MODE_SET = 2
-} lcd_mode_t;
-
-
 void lcd_init(void);
 
 void lcd_set_backlight(uint8_t backlight);
@@ -40,6 +33,6 @@ void lcd_cursor_previous(void);
 
 void lcd_cursor_reset(void);
 
-void lcd_set_mode (lcd_mode_t m);
+lcd_cursor_t lcd_get_cursor (void);
 
 #endif //SW_SYSTEM_LCD_H

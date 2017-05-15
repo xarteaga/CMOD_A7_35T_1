@@ -27,7 +27,7 @@ static void actuators_monitor_task (uint32_t elapsed) {
 
 #endif /* PLATFORM_actuators_MONITOR_PERIOD */
 
-void actuators_init (void) {
+void actuators_init(void) {
     dinouts_init();
 
     dinouts_set_direction(PLATFORM_ACTUATORS_PIN_MOTOR, DINOUTS_DIRECTION_OUT);
@@ -41,7 +41,7 @@ void actuators_init (void) {
     LOG_OK();
 }
 
-void actuators_set_motor (dinouts_level_t level) {
+void actuators_set_motor(dinouts_level_t level) {
     if (level == DINOUTS_HIGH) {
         dinouts_turn_on(PLATFORM_ACTUATORS_PIN_MOTOR);
         actuators_motor_status = DINOUTS_HIGH;
@@ -51,12 +51,12 @@ void actuators_set_motor (dinouts_level_t level) {
     }
 }
 
-void actuators_buzzer_turn_on (void) {
+void actuators_buzzer_turn_on(void) {
     dinouts_turn_on(PLATFORM_ACTUATORS_PIN_BUZZER);
     actuators_buzzer_status = DINOUTS_HIGH;
 }
 
-void actuators_buzzer_turn_off (void) {
+void actuators_buzzer_turn_off(void) {
     dinouts_turn_off(PLATFORM_ACTUATORS_PIN_BUZZER);
     actuators_buzzer_status = DINOUTS_LOW;
 }

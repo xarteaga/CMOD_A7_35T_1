@@ -9,6 +9,7 @@
 
 /* Project Includes */
 #include "scheduler.h"
+#include "../platform/platform.h"
 
 /* Variables */
 extern XIntc platform_intc;
@@ -104,7 +105,7 @@ void scheduler_init(void) {
 
     scheduler_add_entry(&platform_sleep_entry);
 
-    xil_printf("%32s ... OK\r\n", __func__);
+    LOG("%32s ... OK\r\n", __func__);
 }
 
 void scheduler_add_entry(scheduler_entry_t *entry) {
@@ -118,6 +119,6 @@ void scheduler_add_entry(scheduler_entry_t *entry) {
 
         //xil_printf("%s: number of entries: %d.\r\n", __FUNCTION__, scheduler_entries_count);
     } else {
-        xil_printf("[%s] List has reached its limit.\r\n", __FUNCTION__);
+        LOG("[%s] List has reached its limit.\r\n", __FUNCTION__);
     }
 }

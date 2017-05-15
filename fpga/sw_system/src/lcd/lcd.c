@@ -33,7 +33,6 @@ static uint8_t time_update = FALSE;
 static uint8_t alarm1_update = FALSE;
 static uint8_t alarm2_update = FALSE;
 static lcd_cursor_t cursor = LCD_CURSOR_NONE;
-static lcd_mode_t mode = LCD_MODE_STANDBY;
 XUartLite lcd_uart;
 
 static void lcd_update_task(uint32_t elapsed);
@@ -55,8 +54,6 @@ static void lcd_update_task(uint32_t elapsed) {
     static uint32_t timer_update = 0;
     static uint8_t lcd_current_backlight = 0;
     uint8_t update = FALSE;
-    uint8_t m = (uint8_t) ((mode == LCD_MODE_SELECT) ? 0x0E : (mode == LCD_MODE_SET) ? 0x0D : 0x0C);
-    uint8_t c = 0;
     uint8_t i = 0;
 
     /* Manage Backlight */
@@ -87,31 +84,6 @@ static void lcd_update_task(uint32_t elapsed) {
         timer_update = 0;
     } else {
         timer_update += elapsed;
-    }
-
-    /* Select cursor position */
-    switch (cursor) {
-        case LCD_CURSOR_TIME_HOUR:
-            c = 0x41;
-            break;
-        case LCD_CURSOR_TIME_MIN:
-            c = 0x44;
-            break;
-        case LCD_CURSOR_ALARM_1_HOUR:
-            c = 0x0C;
-            break;
-        case LCD_CURSOR_ALARM_1_MIN:
-            c = 0x0F;
-            break;
-        case LCD_CURSOR_ALARM_2_HOUR:
-            c = 0x4C;
-            break;
-        case LCD_CURSOR_ALARM_2_MIN:
-            c = 0x4F;
-            break;
-        default:
-            c = 0x00;
-            m = 0x0C;
     }
 
     /* Set Cursor on first line */
@@ -178,15 +150,9 @@ static void lcd_update_task(uint32_t elapsed) {
         alarm2_update = FALSE;
     }
 
-    /* Set Cursor on desired position */
-
-    /* Stop Mark */
-    /*buffer[i++] = 0xFE;
-    buffer[i++] = m;*/
-
     if (i > 0) {
         buffer[i++] = 0xFE;
-        buffer[i++] = (uint8_t) (0x80 + c);
+        buffer[i++] = 0x80;
         //LOG("Updating %5d %5d", timer_blink, i);
         XUartLite_Send(&lcd_uart, buffer, i);
     }
@@ -225,22 +191,21 @@ void lcd_set_backlight(uint8_t backlight) {
 }
 
 void lcd_set_time(rtc_data_t *t) {
-    if (memcmp(t, &time, sizeof(rtc_data_t)) == FALSE){
+    if (memcmp(t, &time, sizeof(rtc_data_t)) != FALSE){
         memcpy(&time, t, sizeof(rtc_data_t));
         time_update = TRUE;
-        LOG("LCD time change: %s", rtc_get_timestamp_str(t));
     }
 }
 
 void lcd_set_alarm1(rtc_data_t *t) {
-    if (memcmp(t, &alarm1, sizeof(rtc_data_t)) == FALSE) {
+    if (memcmp(t, &alarm1, sizeof(rtc_data_t)) != FALSE) {
         memcpy(&alarm1, t, sizeof(rtc_data_t));
         alarm1_update = TRUE;
     }
 }
 
 void lcd_set_alarm2(rtc_data_t *t) {
-    if (memcmp(t, &alarm2, sizeof(rtc_data_t)) == FALSE) {
+    if (memcmp(t, &alarm2, sizeof(rtc_data_t)) != FALSE) {
         memcpy(&alarm2, t, sizeof(rtc_data_t));
         alarm2_update = TRUE;
     }
@@ -252,7 +217,7 @@ lcd_cursor_t lcd_cursor_get(void) {
 
 void lcd_cursor_next(void) {
     if (cursor == LCD_CURSOR_ALARM_2_MIN) {
-        cursor = LCD_CURSOR_TIME_HOUR;
+        cursor = LCD_CURSOR_NONE;
     } else {
         cursor++;
     }
@@ -270,6 +235,6 @@ void lcd_cursor_reset(void) {
     cursor = LCD_CURSOR_NONE;
 }
 
-void lcd_set_mode(lcd_mode_t m) {
-    mode = m;
+lcd_cursor_t lcd_get_cursor (void) {
+    return cursor;
 }

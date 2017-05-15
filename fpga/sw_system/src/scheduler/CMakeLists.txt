@@ -11,4 +11,5 @@ add_library(scheduler
 		)
 
 # Include Directories
-include_directories(scheduler ../../sdk_workspace/bsp_0/microblaze_0/include)
+include_directories(scheduler ../../sdk_workspace/bsp_0/microblaze_0/include
+		../config)

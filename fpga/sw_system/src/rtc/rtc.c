@@ -24,7 +24,7 @@ static rtc_data_t rtc_alarm_2 = {0};
 
 
 static void rtc_time_update (uint32_t elapsed);
-static scheduler_entry_t rtc_time_update_entry = {0, PLATFORM_RTC_MONITOR_PERIOD, rtc_time_update};
+static scheduler_entry_t rtc_time_update_entry = {0, PLATFORM_RTC_UPDATE_PERIOD, rtc_time_update};
 
 static void rtc_time_update (uint32_t elapsed) {
     rtc_ds1302_clk_read(&rtc_ds1302_time);
@@ -45,7 +45,7 @@ static void rtc_monitor(uint32_t elapsed) {
 #endif /* PLATFORM_RTC_MONITOR_PERIOD */
 
 void rtc_init(void) {
-    rtc_data_t data[2];
+    uint8_t data[4];
 
     rtc_ds1302_init();
 
@@ -90,11 +90,33 @@ void rtc_init(void) {
 
     scheduler_add_entry(&rtc_time_update_entry);
 
-    rtc_ds1302_ram_read(data, 2);
-    memcpy(&rtc_alarm_1, &data[0*sizeof(rtc_data_t)], sizeof(rtc_data_t));
-    memcpy(&rtc_alarm_2, &data[1*sizeof(rtc_data_t)], sizeof(rtc_data_t));
+    rtc_ds1302_ram_read(data, 4);
+    rtc_alarm_1.hr10 = (uint8_t)(data[0]/10);
+    rtc_alarm_1.hr = (uint8_t)(data[0]%10);
+    rtc_alarm_1.min10 = (uint8_t)(data[1]/10);
+    rtc_alarm_1.min = (uint8_t)(data[1]%10);
+    rtc_alarm_2.hr10 = (uint8_t)(data[2]/10);
+    rtc_alarm_2.hr = (uint8_t)(data[2]%10);
+    rtc_alarm_2.min10 = (uint8_t)(data[3]/10);
+    rtc_alarm_2.min = (uint8_t)(data[3]%10);
 
     LOG_OK();
+}
+
+uint8_t rtc_is_equal (rtc_data_t *data1, rtc_data_t *data2) {
+    uint8_t ret = TRUE;
+
+    if (data1 ->hr10 != data2->hr10) {
+        ret = FALSE;
+    } else if (data1 ->hr != data2->hr) {
+        ret = FALSE;
+    } else if (data1 ->min10 != data2->min10) {
+        ret = FALSE;
+    } else if (data1 ->min != data2->min) {
+        ret = FALSE;
+    }
+
+    return ret;
 }
 
 char *rtc_get_timestamp_str(rtc_data_t *time) {
@@ -122,8 +144,8 @@ char *rtc_get_timestamp_str(rtc_data_t *time) {
     return rtc_ds1302_timestamp_rtc;
 }
 
-rtc_data_t *rtc_get_now(void) {
-    return &rtc_ds1302_time;
+void rtc_get_now(rtc_data_t *data) {
+    memcpy(data, &rtc_ds1302_time, sizeof(rtc_data_t));
 }
 
 void rtc_set_now(rtc_data_t *rtc_data) {
@@ -132,25 +154,31 @@ void rtc_set_now(rtc_data_t *rtc_data) {
 }
 
 void rtc_set_alarm_1(rtc_data_t *rtc_data) {
-    rtc_data_t data[2];
+    uint8_t data[4];
     memcpy(&rtc_alarm_1, rtc_data, sizeof(rtc_data_t));
-    memcpy(&data[0], &rtc_alarm_1, sizeof(rtc_data_t));
-    memcpy(&data[1], &rtc_alarm_2, sizeof(rtc_data_t));
-    rtc_ds1302_ram_write(data, 2);
+    data[0] = (uint8_t) (10*rtc_alarm_1.hr10 + rtc_alarm_1.hr);
+    data[1] = (uint8_t) (10*rtc_alarm_1.min10 + rtc_alarm_1.min);
+    data[2] = (uint8_t) (10*rtc_alarm_2.hr10 + rtc_alarm_2.hr);
+    data[3] = (uint8_t) (10*rtc_alarm_2.min10 + rtc_alarm_2.min);
+
+    rtc_ds1302_ram_write(data, 4);
 }
 
 void rtc_set_alarm_2(rtc_data_t *rtc_data) {
-    rtc_data_t data[2];
+    uint8_t data[4];
     memcpy(&rtc_alarm_2, rtc_data, sizeof(rtc_data_t));
-    memcpy(&data[0], &rtc_alarm_1, sizeof(rtc_data_t));
-    memcpy(&data[1], &rtc_alarm_2, sizeof(rtc_data_t));
-    rtc_ds1302_ram_write(data, 2);
+    data[0] = (uint8_t) (10*rtc_alarm_1.hr10 + rtc_alarm_1.hr);
+    data[1] = (uint8_t) (10*rtc_alarm_1.min10 + rtc_alarm_1.min);
+    data[2] = (uint8_t) (10*rtc_alarm_2.hr10 + rtc_alarm_2.hr);
+    data[3] = (uint8_t) (10*rtc_alarm_2.min10 + rtc_alarm_2.min);
+
+    rtc_ds1302_ram_write(data, 4);
 }
 
-rtc_data_t *rtc_get_alarm_1 (void) {
-    return &rtc_alarm_1;
+void rtc_get_alarm_1 (rtc_data_t *data) {
+    memcpy(data, &rtc_alarm_1, sizeof(rtc_data_t));
 }
 
-rtc_data_t *rtc_get_alarm_2 (void) {
-    return &rtc_alarm_2;
+void rtc_get_alarm_2 (rtc_data_t *data) {
+    memcpy(data, &rtc_alarm_2, sizeof(rtc_data_t));
 }

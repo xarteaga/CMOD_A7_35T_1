@@ -7,7 +7,7 @@ set(SDK_WORKSPACE_PATH "${CMAKE_SOURCE_DIR}/sdk_workspace")
 set(XILINX_COMPILERS_PATH "${XILINX_SDK_PATH}/gnu/microblaze/lin/bin/")
 set(XILINX_XSDK "${XILINX_SDK_PATH}/bin/xsdk")
 set(XILINX_XSDB "${XILINX_SDK_PATH}/bin/xsdb")
-set(XILINX_DATA2MEM "${XILINX_SDK_PATH}/bin/data2mem")
+set(XILINX_UPDATEMEM "${XILINX_SDK_PATH}/bin/updatemem")
 
 # Compiler suite specification
 set(CMAKE_AR "${XILINX_COMPILERS_PATH}/mb-ar")
@@ -24,7 +24,7 @@ set(CMAKE_LINKER "${XILINX_COMPILERS_PATH}/mb-ld")
 #set(CMAKE_CXX_FLAGS "-Wl,-T -Wl,../src/lscript.ld")
 
 # Compiler flags
-add_compile_options(-Wall -O2 -c -fmessage-length=0 -mlittle-endian -mcpu=v9.5 -mxl-soft-mul -Wl,--no-relax -MMD -MP)
+add_compile_options(-Wall -Os -c -fmessage-length=0 -mlittle-endian -mcpu=v9.5 -mxl-soft-mul -Wl,--no-relax -MMD -MP)
 
 # Define linker script
 set(CMAKE_LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/lscript.ld")
@@ -50,20 +50,20 @@ set(CMAKE_CXX_COMPILER_WORKS 1)
 
 # Add subdirectories
 add_subdirectory(src/actuators)
-add_subdirectory(src/buffer)
+#add_subdirectory(src/buffer)
 add_subdirectory(src/buttons)
 add_subdirectory(src/dinouts)
 add_subdirectory(src/happypills)
-add_subdirectory(src/http_client)
+#add_subdirectory(src/http_client)
 add_subdirectory(src/irproximity)
 add_subdirectory(src/lcd)
 add_subdirectory(src/leds)
 add_subdirectory(src/platform)
 add_subdirectory(src/rtc)
 add_subdirectory(src/scheduler)
-add_subdirectory(src/sd)
+#add_subdirectory(src/sd)
 add_subdirectory(src/supercap)
-add_subdirectory(src/wifi_esp8266)
+#add_subdirectory(src/wifi_esp8266)
 add_subdirectory(src/xadc)
 
 project (sw_system C )
@@ -84,27 +84,27 @@ add_executable(sw_system
 		src/config/supercap_cfg.h
 		src/config/wifi_cfg.h
 		src/config/xadc_cfg.h
-		${BSP_HEADERS})
+		${BSP_HEADERS} src/config/platform_cfg.h)
 
 # Directories
 include_directories(sw_system
 		sdk_workspace/bsp_0/microblaze_0/include
         src/actuators
-        src/buffer
+        #src/buffer
         src/buttons
 		src/config
 		src/dinouts
         src/happypills
-        src/http_client
+        #src/http_client
         src/irproximity
         src/lcd
         src/leds
 		src/platform
 		src/rtc
 		src/scheduler
-		src/sd
+		#src/sd
         src/supercap
-        src/wifi_esp8266
+        #src/wifi_esp8266
         src/xadc
 		src
 	)
@@ -112,7 +112,7 @@ include_directories(sw_system
 # Add libraries
 target_link_libraries(sw_system
         actuators
-        buffer
+        #buffer
         buttons
         dinouts
         happypills
@@ -122,10 +122,10 @@ target_link_libraries(sw_system
         platform
         scheduler
         rtc
-        sd
+        #sd
         supercap
-        http_client
-        wifi_esp8266
+        #http_client
+        #wifi_esp8266
         xadc
     )
 
@@ -143,3 +143,4 @@ add_custom_target(run ${XILINX_XSDB} -s ${CMAKE_SOURCE_DIR}/scripts/run_elf.tcl 
 # Permanent
 add_custom_target(permanent ${CMAKE_SOURCE_DIR}/scripts/write_rom.sh ${XILINX_DATA2MEM} ${BLOCK_MEMORY_MAP} ${BOOTLOADER_ELF} ${BITFILE})
 
+# /opt/sw/Xilinx/Vivado/2015.2/bin/updatemem  -meminfo ../hw_system/hw_system/hw_system.runs/impl_1/hw_system_wrapper.mmi -data cmake-build-debug/sw_system.elf -bit ../hw_system/output/hw_system.bit -proc hw_system_i/microblaze_0 -out final.bit
